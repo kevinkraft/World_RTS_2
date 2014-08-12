@@ -8,7 +8,7 @@
 # Interface will be multiple choice in terminal menus for now. Tables in ASCII if there are any.
 # The game will have continuous coordinates and will not be based on a grid
 # Every entity will have a positive grid coordinate(x,y) which increases right for x and down for y, as in pygame.
-# Entities will include everything, units, buildings, resources.
+# Entities will include everything, units, buildings, resources. Except Terrain, which will be based on ranges. 
 #
 #Add:
 # Select Entity(done)
@@ -58,6 +58,9 @@ def main():
                 elif choice == 2:
                     #modify atributes
                     print "coming soon"
+                    #new_x = input("New x-coordinat> ")
+                    
+                    
                 elif choice == 3:
                     #Go Back
                     break
