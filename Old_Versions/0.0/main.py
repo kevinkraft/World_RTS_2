@@ -1,5 +1,5 @@
 #World RTS 2
-#Version: 0.1
+#Version: 0.0
 #
 #Kevin Maguire
 #11/08/14
@@ -15,60 +15,27 @@
 # default menu function(done)
 # Display entity atributes(done)
 #  Add More atributes
-# Modify atrributes(done)
-# Orders
-#  First do the movement mechanic
-#  Complex so do it with classes
-#  Carried by people in their inventories
-# Inventory
-# Resources
-# Terain
-#  Will be based on ranges
-# Expand entity class
+# Modify atrributes
+#
+#Problem:
+# You have to click into the pygame window to make the keyp resses work. Kinda ruins the whole point. If you make it really small it can't be
+#  seen(fixed)
 
 import sys
 import entities
-import terrain
 import pygame
 from pygame.locals import *
-import all_names
-from random import randint
+import names
 
 def main():
 
     pygame.init()
     screen = pygame.display.set_mode((1, 1))
 
-    #Initialise
     Entity_list = []
+    select_coords = False
     selection = []
-    order_list = []
-    
-    #vals
-    start_entities = 3
 
-    #clock
-    clock = pygame.time.Clock()
-    minutes = 0
-    seconds = 0
-    milliseconds = 0
-
-    #initial terrain
-    terr = terrain.Terrain([10, 10], 1)
-    
-
-    #initial entities
-    #you
-    entity_you = entities.Entity([0,0])
-    entity_you.name = 'You'
-    entity_you.pos = [randint(0,100),randint(0,100)]
-    Entity_list.append(entity_you)
-    #j others
-    for i in range(0, start_entities):
-        #randomly placed aroung 'you'
-        entity = entities.Entity([entity_you.pos[0] + randint(-10, 10), entity_you.pos[0] + randint(-10, 10)])
-        Entity_list.append(entity)
-        
     #main game loop
     while 1:
 
@@ -77,20 +44,6 @@ def main():
 
 
         while 1:
-
-            #timing
-            if milliseconds > 1000:
-                seconds += 1
-                milliseconds -= 1000
-            if seconds > 60:
-                minutes += 1
-                seconds -= 60
-            #text = time_font.render(("{}:{}".format(minutes, seconds)), 1, BLACK) #text,antialiasing,colour
-            #textpos = text.get_rect()
-            #textpos.centerx = time_xpos
-            #textpos.centery = time_ypos
-            #screen.blit(text, textpos)
-            milliseconds += clock.tick_busy_loop() #returns time since the last call, limits the frame rate to 60FPS
 
             #event loop
             for event in pygame.event.get():
@@ -145,9 +98,6 @@ def main():
                         selection = []
                         print "Deselected"
                     if event.key == pygame.K_8:
-                        #display time
-                        print "{}:{}".format(minutes, seconds)
-                    if event.key == pygame.K_9:
                         #exit
                         pygame.quit()
                         sys.exit()
@@ -185,7 +135,7 @@ def make_name_list(Entity_list):
 
 def main_menu():
     make_menu("What would you like to do?",["Add Entity", "Display Entities", "Select Entity", "Display entity atributes"
-                                            ,"Modify Entity Atributes","Display Menu","Unselect Entity","Display Time","Quit"])
+                                            ,"Modify Entity Atributes","Display Menu","Unselect Entity","Quit"])
 
 
 

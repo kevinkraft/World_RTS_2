@@ -16,10 +16,9 @@ class Entity(object):
      All game entities
 
      """
-     def __init__(self, pos, intr_range = 2):        
+     def __init__(self, pos):        
         self.pos = pos
         self.name = Entity.random_name()
-        self.intr_range = intr_range 
 
      @staticmethod
      def random_name():
