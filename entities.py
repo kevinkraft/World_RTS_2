@@ -33,21 +33,14 @@ class Unit(Entity):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, intr_range = 2, speed = 0.02): #speed is per cyle 60 cycl/s (not sure about this)         
+     def __init__(self, pos, intr_range = 2, speed = 1.0, destination = []): #speed is distance/s, 0.1 s/cycle (not sure)          
           self.pos = pos
           self.name = Entity.random_name()
           self.intr_range = intr_range 
           self.speed = speed
+          self.destination = destination
 
-     def move_unit(self, destination): #unit is a class instance
-          #frontier = Queue()
-          #frontier.put(start)
-          #visited = {}
-          #visited[start] = True
-         # 
-         # while not frontier.empty():
-         #      current = frontier.get()
-         #      for next in graph.neighbors(current):
-         #           if next not in visited:
-         #                frontier.put(next)
-         #                visited[next] = True
+     def display_unit_atributes(self):
+          print "|  {}  |  {}  |                                                                                ".format(self.name, self.pos)
+          print "-----------------------------------------------------------------------------------------------"
+          

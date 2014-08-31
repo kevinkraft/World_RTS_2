@@ -21,15 +21,23 @@
 #  Complex so do it with classes
 #  Carried by people in their inventories
 # Inventory
+#  item classes held in an entity.inventory list
 # Resources
-# Terrain(donr)
+#  Item class
+# Terrain(done)
 #  Will be based on ranges(done)
 #  will be defined by a matrix(done)
 # Expand entity class
-# Movement
-#  each unit will have a move list, each cycle the unit will be moved to the next point on its list of moves,
-#  or wont be moved at all if its list is empty. No need to use classes for a move.
-#  Need to write algorithm to pick best route
+# Movement(done)
+#  Too complicated. Forget terrain. I'll just do really simple movemnt for now.
+#   just move the position by a little bit towards the destination each iteration. The size of the move of course depends on the speed.
+#   Moves in x dir first then y dir
+#  each unit will have a move list, each cycle the unit will be moved to the next point on its list of moves,(no)
+#  or wont be moved at all if its list is empty. No need to use classes for a move.(no)
+#  Need to write algorithm to pick best route(no)
+# Useful display(done)
+#  
+
 
 import sys
 import entities
@@ -72,7 +80,7 @@ def main():
     terr_list = []
    
     #vals
-    start_units = 0
+    start_units = 10
 
     #clock
     clock = pygame.time.Clock()
@@ -130,6 +138,31 @@ def main():
 
         while 1:
 
+            #Movements
+            for unit in Unit_list:
+                if unit.destination == []:
+                    break
+                else:
+                    distance_per_cycle = unit.speed/60.0
+                    if unit.pos[0] == unit.destination[0]: #dont move in x dir if its already in line, then move in y dir
+                        if unit.pos[1] == unit.destination[1]:
+                            unit.destination = [] #destination reached
+                            print str_time_before
+                            
+                        elif abs(unit.pos[1] - unit.destination[1]) < distance_per_cycle: #last step in y
+                            unit.pos[1] = unit.destination[1]
+                        elif unit.pos[1] < unit.destination[1]:
+                            unit.pos[1] = unit.pos[1] + distance_per_cycle
+                        elif unit.pos[1] > unit.destination[1]:
+                            unit.pos[1] = unit.pos[1] - distance_per_cycle
+                    elif abs(unit.pos[0] - unit.destination[0]) < distance_per_cycle: #reach x destination if less than one cycle distance away
+                        unit.pos[0] = unit.destination[0]
+                    elif unit.pos[0] < unit.destination[0]:
+                        unit.pos[0] = unit.pos[0] + distance_per_cycle
+                    elif unit.pos[0] > unit.destination[0]:
+                        unit.pos[0] = unit.pos[0] - distance_per_cycle
+                    print "{} moved to {}".format(unit.name, unit.pos)
+
             #timing
             if milliseconds > 1000:
                 seconds += 1
@@ -142,7 +175,7 @@ def main():
             #textpos.centerx = time_xpos
             #textpos.centery = time_ypos
             #screen.blit(text, textpos)
-            milliseconds += clock.tick_busy_loop() #returns time since the last call, limits the frame rate to 60FPS
+            milliseconds += clock.tick(60) #returns time since the last call, limits the frame rate to 60FPS
 
             #event loop
             for event in pygame.event.get():
@@ -153,20 +186,20 @@ def main():
                     
                     #button press
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_1:
+                    if event.key == pygame.K_a:
                         #add Unit
                         unit = entities.Unit([0,0])
                         Entity_list.append(unit)
-                        Unit_list.append(entity)
+                        Unit_list.append(unit)
                         print "{} created".format(unit.name)
-                    if event.key == pygame.K_2:
+                    if event.key == pygame.K_d:
                         #display entities
                         if len(Entity_list) == 0:
                             print "There are no entites"
                             break
                         print "Entity List:"
                         print make_name_list(Entity_list)
-                    if event.key == pygame.K_3:
+                    if event.key == pygame.K_s:
                         #select entity
                         if len(Entity_list) == 0:
                             print "There are no entites"
@@ -176,13 +209,13 @@ def main():
                             choice = make_menu_choice("Select an entity", name_list)
                             selection = Entity_list[choice-1]
                             print "{} selected".format(selection.name)
-                    if event.key == pygame.K_4:
+                    if event.key == pygame.K_p:
                         #display entity atributes
                         if selection == []:
                             print "No Entity Selected"
                             break
                         print "{}'s position is {}".format(selection.name, selection.pos)
-                    if event.key == pygame.K_5:
+                    if event.key == pygame.K_o:
                         #modify atributes
                         if selection == []:
                             print "No Entity Selected"
@@ -190,34 +223,43 @@ def main():
                         new_x = input("New x-coordinate:  ")
                         new_y = input("New y-coordinate:  ")
                         selection.pos = [new_x, new_y]
-                    if event.key == pygame.K_6:
+                    if event.key == pygame.K_m:
                         #reprint main menu
                         main_menu()
-                    if event.key == pygame.K_7:
+                    if event.key == pygame.K_u:
                         #unselect entity
                         selection = []
                         print "Deselected"
-                    if event.key == pygame.K_8:
+                    if event.key == pygame.K_t:
                         #display time
                         print "{}:{}".format(minutes, seconds)
-                    if event.key == pygame.K_9:
+                    if event.key == pygame.K_v:
                         #movement
+                        str_time_before = "{}:{}".format(minutes, seconds)
                         if selection == []:
                             print "No Unit Selected"
                             break
                         new_x = input("New x-coordinate:  ")
                         new_y = input("New y-coordinate:  ")
-                        selection.move_unit([new_x,new_y]) #([destination])
+                        selection.destination = [new_x, new_y]
+                    if event.key == pygame.K_l:
+                        unit_name_list = make_name_list(Unit_list)
+                        unit_pos_list = make_pos_list(Unit_list)
+                        print "-----------------------------------------------------------------------------------------------------"
+                        print "|  name  |  position  |"
+                        print "-----------------------------------------------------------------------------------------------------"
+                        print "-----------------------------------------------------------------------------------------------------"
+                        for unit in Unit_list:
+                            unit.display_unit_atributes()
                     if event.key == pygame.K_q:
                         #exit
                         pygame.quit()
                         sys.exit()
 
-
                     break
 
-
-
+            
+                
 
 def make_menu_choice(*strs):
     #menu with build in choice
@@ -229,13 +271,24 @@ def make_menu_choice(*strs):
     choice = input("> ")
     return choice
 
+#######################################
+#def make_menu(*strs):
+#    #menu with no built in choice
+#    print "-----------------------------------------"
+#    print strs[0]
+#    for i in range(0,len(strs[1])):
+#        print "{}) {}".format(i+1, strs[1][i])
+#    print "----------------------------------------"
+#######################################
+
 def make_menu(*strs):
-    #menu with no built in choice
+    #menu with no built in choice and specified associated keys
     print "-----------------------------------------"
     print strs[0]
     for i in range(0,len(strs[1])):
-        print "{}) {}".format(i+1, strs[1][i])
+        print "{}) {}".format(strs[1][i], strs[2][i])
     print "----------------------------------------"
+    
 
 def make_name_list(Entity_list):
     #make list of entity names
@@ -258,11 +311,21 @@ def make_type_list(Entity_list):
         type_list.append(Entity_list[i].type)
     return type_list
 
+
+
 def main_menu():
-    make_menu("What would you like to do?",["Add Unit", "Display Entities", "Select Entity", "Display entity atributes"
-                                            ,"Modify Entity Atributes","Display Menu","Unselect Entity","Display Time","Move Unit","Q: Quit"])
-
-
+    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","q"], ["Add Unit",
+                                                                                              "Display Entities",
+                                                                                              "Select Entity",
+                                                                                              "Display entity atributes",
+                                                                                              "Modify Entity Atributes",
+                                                                                              "Display Menu", 
+                                                                                              "Unselect Entity",
+                                                                                              "Display Time",
+                                                                                              "Move Unit",
+                                                                                              "Display List",
+                                                                                              "Quit"])
+    
 
 main()
 
