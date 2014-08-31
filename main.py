@@ -22,17 +22,42 @@
 #  Carried by people in their inventories
 # Inventory
 # Resources
-# Terain
-#  Will be based on ranges
+# Terrain(donr)
+#  Will be based on ranges(done)
+#  will be defined by a matrix(done)
 # Expand entity class
+# Movement
+#  each unit will have a move list, each cycle the unit will be moved to the next point on its list of moves,
+#  or wont be moved at all if its list is empty. No need to use classes for a move.
+#  Need to write algorithm to pick best route
 
 import sys
 import entities
-import terrain
+import terrains
 import pygame
 from pygame.locals import *
 import all_names
 from random import randint
+
+"""
+
+Game Parameter
+
+"""
+simple_map = [[2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 1, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 1, 1, 1],
+              [2, 2, 0, 0, 1, 0, 1, 0, 1, 1],
+              [2, 2, 0, 0, 0, 1, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1]]
+current_map = simple_map
+terr_length = 10
+
+
 
 def main():
 
@@ -41,11 +66,13 @@ def main():
 
     #Initialise
     Entity_list = []
+    Unit_list = []
     selection = []
     order_list = []
-    
+    terr_list = []
+   
     #vals
-    start_entities = 3
+    start_units = 0
 
     #clock
     clock = pygame.time.Clock()
@@ -54,20 +81,45 @@ def main():
     milliseconds = 0
 
     #initial terrain
-    terr = terrain.Terrain([10, 10], 1)
+    for i in range(0, len(current_map)):
+        current_row = current_map[i]
+        for j in range(0, len(current_row)):
+            terr = terrains.terrain([i*10, j*10],current_map[i][j], terr_length)
+            terr.set_terr_parameters()
+            terr_list.append(terr)
     
 
-    #initial entities
+#######################################################################
+#old Broken method
+########################################################################
+ #   #initial terrain
+ #   terr_pos = [0, 0]
+ #   for row in current_map:
+ #       #print make_type_list(terr_list)
+ #       #print terr_list
+ #       terr_pos[0] = 0
+ #       for terr_type in row:
+ #           terr = terrains.terrain(terr_pos, terr_type, terr_length)
+ #           terr.set_terr_parameters()
+ #           terr_list.append(terr)
+ #           #print terr.type
+ #           terr_pos[0] = terr_pos[0] + terr_length
+ #       terr_pos[1] = terr_pos[1] + terr_length
+###########################################################################
+
+    #initial units
     #you
-    entity_you = entities.Entity([0,0])
-    entity_you.name = 'You'
-    entity_you.pos = [randint(0,100),randint(0,100)]
-    Entity_list.append(entity_you)
+    unit_you = entities.Unit([0,0])
+    unit_you.name = 'You'
+    unit_you.pos = [randint(0,100),randint(0,100)]
+    Entity_list.append(unit_you)
+    Unit_list.append(unit_you)
     #j others
-    for i in range(0, start_entities):
+    for i in range(0, start_units):
         #randomly placed aroung 'you'
-        entity = entities.Entity([entity_you.pos[0] + randint(-10, 10), entity_you.pos[0] + randint(-10, 10)])
-        Entity_list.append(entity)
+        unit = entities.Unit([unit_you.pos[0] + randint(-10, 10), unit_you.pos[0] + randint(-10, 10)])
+        Entity_list.append(unit)
+        Unit_list.append(unit)
         
     #main game loop
     while 1:
@@ -102,10 +154,11 @@ def main():
                     #button press
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_1:
-                        #add Entity
-                        entity = entities.Entity([0,0])
-                        Entity_list.append(entity)
-                        print "{} created".format(entity.name)
+                        #add Unit
+                        unit = entities.Unit([0,0])
+                        Entity_list.append(unit)
+                        Unit_list.append(entity)
+                        print "{} created".format(unit.name)
                     if event.key == pygame.K_2:
                         #display entities
                         if len(Entity_list) == 0:
@@ -148,6 +201,14 @@ def main():
                         #display time
                         print "{}:{}".format(minutes, seconds)
                     if event.key == pygame.K_9:
+                        #movement
+                        if selection == []:
+                            print "No Unit Selected"
+                            break
+                        new_x = input("New x-coordinate:  ")
+                        new_y = input("New y-coordinate:  ")
+                        selection.move_unit([new_x,new_y]) #([destination])
+                    if event.key == pygame.K_q:
                         #exit
                         pygame.quit()
                         sys.exit()
@@ -183,9 +244,23 @@ def make_name_list(Entity_list):
         name_list.append(Entity_list[i].name)
     return name_list
 
+def make_pos_list(Entity_list):
+    #make list of entity positionss
+    pos_list = []
+    for i in range(0, len(Entity_list)):
+        pos_list.append(Entity_list[i].pos)
+    return pos_list
+
+def make_type_list(Entity_list):
+    #make list of entity positionss
+    type_list = []
+    for i in range(0, len(Entity_list)):
+        type_list.append(Entity_list[i].type)
+    return type_list
+
 def main_menu():
-    make_menu("What would you like to do?",["Add Entity", "Display Entities", "Select Entity", "Display entity atributes"
-                                            ,"Modify Entity Atributes","Display Menu","Unselect Entity","Display Time","Quit"])
+    make_menu("What would you like to do?",["Add Unit", "Display Entities", "Select Entity", "Display entity atributes"
+                                            ,"Modify Entity Atributes","Display Menu","Unselect Entity","Display Time","Move Unit","Q: Quit"])
 
 
 
