@@ -23,11 +23,11 @@
 # Inventory
 #  item classes held in an entity.inventory list
 # Resources
-#  Item class
+#  map resource is an entity class, inventory resource is an item class
 # Terrain(done)
 #  Will be based on ranges(done)
 #  will be defined by a matrix(done)
-# Expand entity class
+# Expand entity class(done)
 # Movement(done)
 #  Too complicated. Forget terrain. I'll just do really simple movemnt for now.
 #   just move the position by a little bit towards the destination each iteration. The size of the move of course depends on the speed.
@@ -36,8 +36,13 @@
 #  or wont be moved at all if its list is empty. No need to use classes for a move.(no)
 #  Need to write algorithm to pick best route(no)
 # Useful display(done)
-#  
-
+# HP
+#  Buildings and units have HP, resource entities dont
+#  So I may need to have units and HP in their own entity subclass  
+#  Might be the same for int_range
+#
+#Problem:
+# Can only move 'you' can't move any of the other units
 
 import sys
 import entities
@@ -76,11 +81,14 @@ def main():
     Entity_list = []
     Unit_list = []
     selection = []
-    order_list = []
+    Order_list = []
     terr_list = []
-   
+    Resource_list = []
+
+
     #vals
-    start_units = 10
+    start_units = 1
+    start_map_resources = 3
 
     #clock
     clock = pygame.time.Clock()
@@ -88,32 +96,13 @@ def main():
     seconds = 0
     milliseconds = 0
 
-    #initial terrain
+    #initial terrain(not used)
     for i in range(0, len(current_map)):
         current_row = current_map[i]
         for j in range(0, len(current_row)):
             terr = terrains.terrain([i*10, j*10],current_map[i][j], terr_length)
             terr.set_terr_parameters()
             terr_list.append(terr)
-    
-
-#######################################################################
-#old Broken method
-########################################################################
- #   #initial terrain
- #   terr_pos = [0, 0]
- #   for row in current_map:
- #       #print make_type_list(terr_list)
- #       #print terr_list
- #       terr_pos[0] = 0
- #       for terr_type in row:
- #           terr = terrains.terrain(terr_pos, terr_type, terr_length)
- #           terr.set_terr_parameters()
- #           terr_list.append(terr)
- #           #print terr.type
- #           terr_pos[0] = terr_pos[0] + terr_length
- #       terr_pos[1] = terr_pos[1] + terr_length
-###########################################################################
 
     #initial units
     #you
@@ -128,7 +117,22 @@ def main():
         unit = entities.Unit([unit_you.pos[0] + randint(-10, 10), unit_you.pos[0] + randint(-10, 10)])
         Entity_list.append(unit)
         Unit_list.append(unit)
+    print Unit_list
+    print "Unit_list[1].destination"
+    print Unit_list[1].destination
+
         
+    #initial map resources
+    res_type_names = entities.set_res_type_names()
+    for i in range(0, start_map_resources):
+        #randomly placed aroung 'you'
+        resource = entities.Resource([unit_you.pos[0] + randint(-50, 50), unit_you.pos[0] + randint(-50, 50)],
+                                     randint(0, 2),
+                                     1000) #pos, type, amount
+        resource.set_res_atributes(res_type_names)
+        Resource_list.append(resource)
+
+
     #main game loop
     while 1:
 
@@ -140,15 +144,16 @@ def main():
 
             #Movements
             for unit in Unit_list:
+                print unit.destination
+                print unit.name
                 if unit.destination == []:
                     break
                 else:
+                    print "in movement cycle"
                     distance_per_cycle = unit.speed/60.0
                     if unit.pos[0] == unit.destination[0]: #dont move in x dir if its already in line, then move in y dir
                         if unit.pos[1] == unit.destination[1]:
                             unit.destination = [] #destination reached
-                            print str_time_before
-                            
                         elif abs(unit.pos[1] - unit.destination[1]) < distance_per_cycle: #last step in y
                             unit.pos[1] = unit.destination[1]
                         elif unit.pos[1] < unit.destination[1]:
@@ -205,6 +210,7 @@ def main():
                             print "There are no entites"
                             break
                         else:
+                            selection = []
                             name_list = make_name_list(Entity_list)
                             choice = make_menu_choice("Select an entity", name_list)
                             selection = Entity_list[choice-1]
@@ -235,13 +241,14 @@ def main():
                         print "{}:{}".format(minutes, seconds)
                     if event.key == pygame.K_v:
                         #movement
-                        str_time_before = "{}:{}".format(minutes, seconds)
                         if selection == []:
                             print "No Unit Selected"
                             break
                         new_x = input("New x-coordinate:  ")
                         new_y = input("New y-coordinate:  ")
                         selection.destination = [new_x, new_y]
+                        print "Unit_list[1].destination"
+                        print Unit_list[1].destination
                     if event.key == pygame.K_l:
                         unit_name_list = make_name_list(Unit_list)
                         unit_pos_list = make_pos_list(Unit_list)
@@ -251,6 +258,18 @@ def main():
                         print "-----------------------------------------------------------------------------------------------------"
                         for unit in Unit_list:
                             unit.display_unit_atributes()
+                    if event.key == pygame.K_r:
+                        res_name_list = make_name_list(Resource_list)
+                        res_type_list = make_type_list(Resource_list)
+                        res_name_list = make_name_list(Resource_list)
+                        res_amount_list = make_amount_list(Resource_list)
+                        print "-----------------------------------------------------------------------------------------------------"
+                        print "|  name  |  position  |  type  |  amount  |"
+                        print "-----------------------------------------------------------------------------------------------------"
+                        print "-----------------------------------------------------------------------------------------------------"
+                        for resource in Resource_list:
+                            resource.display_resource_atributes()
+
                     if event.key == pygame.K_q:
                         #exit
                         pygame.quit()
@@ -270,16 +289,6 @@ def make_menu_choice(*strs):
     print "----------------------------------------"
     choice = input("> ")
     return choice
-
-#######################################
-#def make_menu(*strs):
-#    #menu with no built in choice
-#    print "-----------------------------------------"
-#    print strs[0]
-#    for i in range(0,len(strs[1])):
-#        print "{}) {}".format(i+1, strs[1][i])
-#    print "----------------------------------------"
-#######################################
 
 def make_menu(*strs):
     #menu with no built in choice and specified associated keys
@@ -305,26 +314,32 @@ def make_pos_list(Entity_list):
     return pos_list
 
 def make_type_list(Entity_list):
-    #make list of entity positionss
+    #make list of entity type
     type_list = []
     for i in range(0, len(Entity_list)):
         type_list.append(Entity_list[i].type)
     return type_list
 
-
+def make_amount_list(Entity_list):
+    #make list of entity amounts
+    amount_list = []
+    for i in range(0, len(Entity_list)):
+        amount_list.append(Entity_list[i].type)
+    return amount_list
 
 def main_menu():
-    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","q"], ["Add Unit",
-                                                                                              "Display Entities",
-                                                                                              "Select Entity",
-                                                                                              "Display entity atributes",
-                                                                                              "Modify Entity Atributes",
-                                                                                              "Display Menu", 
-                                                                                              "Unselect Entity",
-                                                                                              "Display Time",
-                                                                                              "Move Unit",
-                                                                                              "Display List",
-                                                                                              "Quit"])
+    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","r","q"], ["Add Unit",
+                                                                                                       "Display Entities",
+                                                                                                       "Select Entity",
+                                                                                                       "Display entity atributes",
+                                                                                                       "Modify Entity Atributes",
+                                                                                                       "Display Menu", 
+                                                                                                       "Unselect Entity",
+                                                                                                       "Display Time",
+                                                                                                       "Move Unit",
+                                                                                                       "Display List",
+                                                                                                       "Display Resources",
+                                                                                                       "Quit"])
     
 
 main()
