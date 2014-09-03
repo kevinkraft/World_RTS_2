@@ -60,11 +60,11 @@ class Building(Entity):
      def set_building_atributes(self, building_type_names):
           #main hut
           if self.type == 0:
-               self.name = res_type_names[0]
+               self.name = building_type_names[0]
                self.unit_capacity = 10
           #storage pile
           if self.type == 1:
-               self.name = res_type_names[1]
+               self.name = building_type_names[1]
                self.inventory_size = 200
                
 
@@ -92,11 +92,11 @@ class Resource(Entity):
           if self.type == 2:
                self.name = res_type_names[2]
                
-def set_res_type_names():
-     res_type_names = []
-     for i in range(0,3):
-          res_type_names.append(Entity.random_name())
-     return res_type_names
+def set_entity_type_names(num_types):
+     entity_type_names = []
+     for i in range(0,num_types):
+          entity_type_names.append(Entity.random_name())
+     return entity_type_names
 
 def display_unit_atributes(Unit_list):
      #table of unit atributes
@@ -105,7 +105,7 @@ def display_unit_atributes(Unit_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for unit in Unit_list:
-          print "|  {}  |  {}  |  {}  |                                                                         ".format(unit.name,
+          print "|  {}  |  {}  |   {}   |                                                                         ".format(unit.name,
                                                                                                                          unit.pos,
                                                                                                                          unit.destination)
           print "-----------------------------------------------------------------------------------------------"
@@ -116,8 +116,22 @@ def display_resource_atributes(Resource_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for resource in Resource_list:
-          print "|  {}  |  {}  |  {}  |  {}  |                                                                   ".format(resource.name,
+          print "|  {}  |  {}  |   {}   |  {}  |                                                                   ".format(resource.name,
                                                                                                                           resource.pos,
                                                                                                                           resource.type,
                                                                                                                           resource.amount)
+          print "-----------------------------------------------------------------------------------------------"
+
+def display_building_atributes(Building_list):
+     #table of building atributes
+     print "-----------------------------------------------------------------------------------------------------"
+     print "|  name  |  position  |  type  |  unit capacity  |  inventory size  |"
+     print "-----------------------------------------------------------------------------------------------------"
+     print "-----------------------------------------------------------------------------------------------------"             
+     for build in Building_list:
+          print "|  {}  |  {}  |   {}   |     {}     |     {}     |                                                ".format(build.name,
+                                                                                                                          build.pos,
+                                                                                                                          build.type,
+                                                                                                                          build.unit_capacity,
+                                                                                                                          build.inventory_size)
           print "-----------------------------------------------------------------------------------------------"

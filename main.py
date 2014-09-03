@@ -1,5 +1,5 @@
 #World RTS 2
-#Version: 0.1
+#Version: 0.2
 #
 #Kevin Maguire
 #11/08/14
@@ -11,11 +11,6 @@
 # Entities will include everything, units, buildings, resources. Except Terrain, which will be based on ranges. 
 #
 #Add:
-# Select Entity(done)
-# default menu function(done)
-# Display entity atributes(done)
-#  Add More atributes
-# Modify atrributes(done)
 # Orders
 #  First do the movement mechanic
 #  Complex so do it with classes
@@ -24,18 +19,8 @@
 #  item classes held in an entity.inventory list
 # Resources
 #  map resource is an entity class, inventory resource is an item class
-# Terrain(done)
-#  Will be based on ranges(done)
-#  will be defined by a matrix(done)
-# Expand entity class(done)
-# Movement(done)
-#  Too complicated. Forget terrain. I'll just do really simple movemnt for now.
-#   just move the position by a little bit towards the destination each iteration. The size of the move of course depends on the speed.
-#   Moves in x dir first then y dir
-#  each unit will have a move list, each cycle the unit will be moved to the next point on its list of moves,(no)
-#  or wont be moved at all if its list is empty. No need to use classes for a move.(no)
-#  Need to write algorithm to pick best route(no)
-# Useful display(done)
+#  ability to collect resources
+#   
 # HP
 #  Buildings and units have HP, resource entities dont
 #  So I may need to have units and HP in their own entity subclass  
@@ -43,16 +28,17 @@
 # Buildings
 #  Made with random name for each type. MAke three types for now but only use one.
 #
-#Problem:
-# Can only move 'you' can't move any of the other units
 
 import sys
 import entities
+#from entities import Resource, Unit, Building, Entity
 import terrains
 import pygame
 from pygame.locals import *
 import all_names
 from random import randint
+from math import sqrt
+from math import pow
 
 """
 
@@ -72,8 +58,6 @@ simple_map = [[2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
 current_map = simple_map
 terr_length = 10
 
-
-
 def main():
 
     pygame.init()
@@ -86,7 +70,7 @@ def main():
     Order_list = []
     terr_list = []
     Resource_list = []
-
+    Building_list = []
 
     #vals
     start_units = 3
@@ -114,14 +98,27 @@ def main():
     Entity_list.append(unit_you)
     Unit_list.append(unit_you)
     #j others
+    dist_from_you = 2
     for i in range(0, start_units):
         #randomly placed aroung 'you'
-        unit = entities.Unit([unit_you.pos[0] + randint(-10, 10), unit_you.pos[0] + randint(-10, 10)])
+        unit = entities.Unit([unit_you.pos[0] + randint(-dist_from_you, dist_from_you),
+                              unit_you.pos[1] + randint(-dist_from_you, dist_from_you)])
         Entity_list.append(unit)
         Unit_list.append(unit)
 
+    #initial buildings #one hut one storage pile
+    building_type_names = entities.set_entity_type_names(2) #set random name for each type
+    building1 = entities.Building([unit_you.pos[0] + randint(-5, 5), unit_you.pos[0] + randint(-5, 5)], 0) #pos, type
+    building1.set_building_atributes(building_type_names)
+    Entity_list.append(building1)
+    Building_list.append(building1)
+    building2 = entities.Building([unit_you.pos[0] + randint(-5, 5), unit_you.pos[0] + randint(-5, 5)], 1) #pos, type
+    building2.set_building_atributes(building_type_names)
+    Entity_list.append(building2)
+    Building_list.append(building2)
+
     #initial map resources
-    res_type_names = entities.set_res_type_names()
+    res_type_names = entities.set_entity_type_names(3) #set random name for each type
     for i in range(0, start_map_resources):
         #randomly placed aroung 'you'
         resource = entities.Resource([unit_you.pos[0] + randint(-50, 50), unit_you.pos[0] + randint(-50, 50)],
@@ -129,9 +126,7 @@ def main():
                                      1000) #pos, type, amount
         resource.set_res_atributes(res_type_names)
         Resource_list.append(resource)
-
-    
-    
+        Entity_list.append(resource)
 
     #main menu
     main_menu()
@@ -162,8 +157,7 @@ def main():
                     the_unit.pos[0] = the_unit.pos[0] + distance_per_cycle
                 elif the_unit.pos[0] > the_unit.destination[0]:
                     the_unit.pos[0] = the_unit.pos[0] - distance_per_cycle
-                    
-
+            
         #timing
         if milliseconds > 1000:
             seconds += 1
@@ -252,19 +246,55 @@ def main():
                             #print Unit_list[1].destination
                             break #break while loop
                 if event.key == pygame.K_l:
-                        #list unit properties
+                    #list unit properties
                     entities.display_unit_atributes(Unit_list)
                 if event.key == pygame.K_r:
-                        #list resource properties
+                    #list resource properties
                     entities.display_resource_atributes(Resource_list)
+                if event.key == pygame.K_b:
+                    #list building properties
+                    entities.display_building_atributes(Building_list)
+                if event.key == pygame.K_c:
+                    #possible actions for unit 
+                    entities_in_range = [] 
+                    action_list = [] #string of possible actions
+                    for entity in Entity_list: #distance between two points
+                        dist_between = sqrt(pow(entity.pos[0] - selection.pos[0], 2) + pow(entity.pos[1] - selection.pos[1], 2))
+                        print "DOING DIST CALC"
+                        if dist_between < selection.intr_range:
+                            print "Yes less than {}".format(entity.name)
+                            entities_in_range.append(entity)
+                            #print "type(entity)"
+                            #print type(entity)
+                            #print type(type(entity))
+                            #print "type(entity).__name__"
+                            #print type(entity).__name__
+                            #print type(type(entity).__name__)
+                            print "entities.Unit"
+                            print entities.Unit
+                            print type(entities.Unit)
+                            #print "entities.Unit.__name__"
+                            #print entities.Unit.__name__
+                            #print type(entities.Unit.__name__)
+                            #print "entities.Unit.__class__"
+                            #print entities.Unit.__class__
+                            #print type(entities.Unit.__class__)
+                            print "entity.__class__"
+                            print entity.__class__
+                            print type(entity.__class__)
+                            if entity.__class__ is  entities.Unit:
+                                action_list.append("Attack {}, coming soon".format(entity.name))
+                            if type(entity) ==  entities.Building.__name__:
+                                action_list.append("Enter Buidling {}: coming soon".format(entity.name))
+                            if type(entity) == entities.Resource.__name__:
+                                action_list.append("Mine {}".foramt(entity.name))
+                    
+  
                 if event.key == pygame.K_q:
-                        #exit
+                    #exit
                     pygame.quit()
                     sys.exit()
 
-            
-            
-            
 def make_menu_choice(*strs):
     #menu with build in choice
     print "-----------------------------------------"
@@ -331,18 +361,20 @@ def make_name_list(Entity_list):
 #    return amount_list
 
 def main_menu():
-    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","r","q"], ["Add Unit",
-                                                                                                       "Display Entities",
-                                                                                                       "Select Entity",
-                                                                                                       "Display entity atributes",
-                                                                                                       "Modify Entity Atributes",
-                                                                                                       "Display Menu", 
-                                                                                                       "Unselect Entity",
-                                                                                                       "Display Time",
-                                                                                                       "Move Unit",
-                                                                                                       "Display List",
-                                                                                                       "Display Resources",
-                                                                                                       "Quit"])
+    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","r","b","c","q"], ["Add Unit",
+                                                                                                               "Display Entities",
+                                                                                                               "Select Entity",
+                                                                                                               "Display entity atributes",
+                                                                                                               "Modify Entity Atributes",
+                                                                                                               "Display Menu", 
+                                                                                                               "Unselect Entity",
+                                                                                                               "Display Time",
+                                                                                                               "Move Unit",
+                                                                                                               "Display List",
+                                                                                                               "Display Resources",
+                                                                                                               "Display Buildings",
+                                                                                                               "Do Action",
+                                                                                                               "Quit"])
     
 
 main()
