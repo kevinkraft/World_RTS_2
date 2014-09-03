@@ -12,7 +12,7 @@
 #
 #Add:
 # Orders
-#  First do the movement mechanic
+#  First do the movement mechanic(done)
 #  Complex so do it with classes
 #  Carried by people in their inventories
 # Inventory
@@ -20,6 +20,7 @@
 # Resources
 #  map resource is an entity class, inventory resource is an item class
 #  ability to collect resources
+#   action list(Done)
 #   
 # HP
 #  Buildings and units have HP, resource entities dont
@@ -30,9 +31,9 @@
 #
 
 import sys
-import entities
-#from entities import Resource, Unit, Building, Entity
-import terrains
+from entities import *
+from actions import *
+from terrains import *
 import pygame
 from pygame.locals import *
 import all_names
@@ -71,10 +72,14 @@ def main():
     terr_list = []
     Resource_list = []
     Building_list = []
+    collect_list = []
 
     #vals
     start_units = 3
     start_map_resources = 3
+    unit_dist_from_you = 2
+    res_dist_from_you = 2
+    building_dist_from_you = 2
 
     #clock
     clock = pygame.time.Clock()
@@ -86,44 +91,46 @@ def main():
     for i in range(0, len(current_map)):
         current_row = current_map[i]
         for j in range(0, len(current_row)):
-            terr = terrains.terrain([i*10, j*10],current_map[i][j], terr_length)
+            terr = terrain([i*10, j*10],current_map[i][j], terr_length)
             terr.set_terr_parameters()
             terr_list.append(terr)
 
     #initial units
     #you
-    unit_you = entities.Unit([0,0])
+    unit_you = Unit([0,0], 10) #pos, intr_rang (default = 2)
     unit_you.name = 'You'
     unit_you.pos = [randint(0,100),randint(0,100)]
     Entity_list.append(unit_you)
     Unit_list.append(unit_you)
     #j others
-    dist_from_you = 2
     for i in range(0, start_units):
         #randomly placed aroung 'you'
-        unit = entities.Unit([unit_you.pos[0] + randint(-dist_from_you, dist_from_you),
-                              unit_you.pos[1] + randint(-dist_from_you, dist_from_you)])
+        unit = Unit([unit_you.pos[0] + randint(-unit_dist_from_you, unit_dist_from_you),
+                     unit_you.pos[1] + randint(-unit_dist_from_you, unit_dist_from_you)])
         Entity_list.append(unit)
         Unit_list.append(unit)
 
     #initial buildings #one hut one storage pile
-    building_type_names = entities.set_entity_type_names(2) #set random name for each type
-    building1 = entities.Building([unit_you.pos[0] + randint(-5, 5), unit_you.pos[0] + randint(-5, 5)], 0) #pos, type
+    building_type_names = set_entity_type_names(2) #set random name for each type
+    building1 = Building([unit_you.pos[0] + randint(-building_dist_from_you, building_dist_from_you),
+                          unit_you.pos[1] + randint(-building_dist_from_you, building_dist_from_you)], 0) #pos, type
     building1.set_building_atributes(building_type_names)
     Entity_list.append(building1)
     Building_list.append(building1)
-    building2 = entities.Building([unit_you.pos[0] + randint(-5, 5), unit_you.pos[0] + randint(-5, 5)], 1) #pos, type
+    building2 = Building([unit_you.pos[0] + randint(-building_dist_from_you, building_dist_from_you),
+                          unit_you.pos[1] + randint(-building_dist_from_you, building_dist_from_you)], 1) #pos, type
     building2.set_building_atributes(building_type_names)
     Entity_list.append(building2)
     Building_list.append(building2)
 
     #initial map resources
-    res_type_names = entities.set_entity_type_names(3) #set random name for each type
+    res_type_names = set_entity_type_names(3) #set random name for each type
     for i in range(0, start_map_resources):
         #randomly placed aroung 'you'
-        resource = entities.Resource([unit_you.pos[0] + randint(-50, 50), unit_you.pos[0] + randint(-50, 50)],
-                                     randint(0, 2),
-                                     1000) #pos, type, amount
+        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you, res_dist_from_you),
+                             unit_you.pos[1] + randint(-res_dist_from_you, res_dist_from_you)],
+                            randint(0, 2),
+                            1000) #pos, type, amount
         resource.set_res_atributes(res_type_names)
         Resource_list.append(resource)
         Entity_list.append(resource)
@@ -157,7 +164,20 @@ def main():
                     the_unit.pos[0] = the_unit.pos[0] + distance_per_cycle
                 elif the_unit.pos[0] > the_unit.destination[0]:
                     the_unit.pos[0] = the_unit.pos[0] - distance_per_cycle
+        
+        #collectiong
+        for collect_ in collect_list:
+            if get_dist_between(collect_.target, collect_.acter) > collect_.acter.intr_range:
+                collect_list.remove(collect_) #remove if acter has moved too far away
+                del collect_
+                continue
+            else:
+                pass
             
+
+
+
+    
         #timing
         if milliseconds > 1000:
             seconds += 1
@@ -183,7 +203,7 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     #add Unit
-                    unit = entities.Unit([0,0])
+                    unit = Unit([0,0])
                     Entity_list.append(unit)
                     Unit_list.append(unit)
                     print "{} created".format(unit.name)
@@ -242,54 +262,51 @@ def main():
                             print "invalid Choice"
                         else:
                             selection.destination = [new_x, new_y]
-                            #print "Unit_list[1].destination"
-                            #print Unit_list[1].destination
                             break #break while loop
                 if event.key == pygame.K_l:
                     #list unit properties
-                    entities.display_unit_atributes(Unit_list)
+                    display_unit_atributes(Unit_list)
                 if event.key == pygame.K_r:
                     #list resource properties
-                    entities.display_resource_atributes(Resource_list)
+                    display_resource_atributes(Resource_list)
                 if event.key == pygame.K_b:
                     #list building properties
-                    entities.display_building_atributes(Building_list)
+                    display_building_atributes(Building_list)
                 if event.key == pygame.K_c:
                     #possible actions for unit 
                     entities_in_range = [] 
-                    action_list = [] #string of possible actions
+                    str_action_list = [] #string of possible actions
+                    type_action_list =[]
                     for entity in Entity_list: #distance between two points
-                        dist_between = sqrt(pow(entity.pos[0] - selection.pos[0], 2) + pow(entity.pos[1] - selection.pos[1], 2))
-                        print "DOING DIST CALC"
+                        if selection == []:
+                            print "No Unit Selected"
+                            break
+                        dist_between = get_dist_between(entity, selection)                    
                         if dist_between < selection.intr_range:
-                            print "Yes less than {}".format(entity.name)
                             entities_in_range.append(entity)
-                            #print "type(entity)"
-                            #print type(entity)
-                            #print type(type(entity))
-                            #print "type(entity).__name__"
-                            #print type(entity).__name__
-                            #print type(type(entity).__name__)
-                            print "entities.Unit"
-                            print entities.Unit
-                            print type(entities.Unit)
-                            #print "entities.Unit.__name__"
-                            #print entities.Unit.__name__
-                            #print type(entities.Unit.__name__)
-                            #print "entities.Unit.__class__"
-                            #print entities.Unit.__class__
-                            #print type(entities.Unit.__class__)
-                            print "entity.__class__"
-                            print entity.__class__
-                            print type(entity.__class__)
-                            if entity.__class__ is  entities.Unit:
-                                action_list.append("Attack {}, coming soon".format(entity.name))
-                            if type(entity) ==  entities.Building.__name__:
-                                action_list.append("Enter Buidling {}: coming soon".format(entity.name))
-                            if type(entity) == entities.Resource.__name__:
-                                action_list.append("Mine {}".foramt(entity.name))
-                    
-  
+                            if type(entity) is Unit:
+                                str_action_list.append("Attack {}, coming soon".format(entity.name))
+                                type_action_list.append(0) #0 for attack
+                            if type(entity) is Building:
+                                str_action_list.append("Enter Buidling {}: coming soon".format(entity.name))
+                                type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
+                            if type(entity) is Resource:
+                                str_action_list.append("Mine {}, coming soon".format(entity.name))
+                                type_action_list.append(2) #2 for collection            
+                    choice = make_menu_choice("Select an Action", str_action_list)
+                    selected_entity = entities_in_range[choice - 1]
+                    selected_action = type_action_list[choice - 1]
+                    print "{} {} selected".format(selected_action, selected_entity.name)                    
+                    if selected_action == 0:
+                        print "coming soon"
+                    if selected_action == 1:
+                        print "coming soon"
+                    if selected_action == 2:
+                        collect_ = Collect(selection, selected_entity) #acter, target
+                        collect_list.append(collect_) 
+                if event.key == pygame.K_y:     
+                    #print collection list
+                    print collect_list
                 if event.key == pygame.K_q:
                     #exit
                     pygame.quit()
@@ -327,6 +344,10 @@ def make_name_list(Entity_list):
     for i in range(0, len(Entity_list)):
         name_list.append(Entity_list[i].name)
     return name_list
+
+def get_dist_between(entity1, entity2):
+    dist_between = sqrt(pow(entity1.pos[0] - entity2.pos[0], 2) + pow(entity1.pos[1] - entity2.pos[1], 2))
+    return dist_between
 
 #not used
 #def make_pos_list(Entity_list):

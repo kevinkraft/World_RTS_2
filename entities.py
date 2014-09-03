@@ -34,7 +34,7 @@ class Unit(Entity):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, inventory = [], inventory_size = 10, intr_range = 2, speed = 1.0, destination = []): #speed is distance/s, 0.1 s/cycle (not sure)
+     def __init__(self, pos, intr_range = 2, inventory = [], inventory_size = 10, speed = 1.0, destination = []): #speed is distance/s, 0.1 s/cycle (not sure)
           self.pos = pos
           self.name = Entity.random_name()
           self.intr_range = intr_range 
@@ -105,8 +105,9 @@ def display_unit_atributes(Unit_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for unit in Unit_list:
-          print "|  {}  |  {}  |   {}   |                                                                         ".format(unit.name,
-                                                                                                                         unit.pos,
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   |                                                      ".format(unit.name,
+                                                                                                                         unit.pos[0],
+                                                                                                                         unit.pos[1],
                                                                                                                          unit.destination)
           print "-----------------------------------------------------------------------------------------------"
 
@@ -116,10 +117,11 @@ def display_resource_atributes(Resource_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for resource in Resource_list:
-          print "|  {}  |  {}  |   {}   |  {}  |                                                                   ".format(resource.name,
-                                                                                                                          resource.pos,
-                                                                                                                          resource.type,
-                                                                                                                          resource.amount)
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   |  {4}  |                                         ".format(resource.name,
+                                                                                                                    resource.pos[0],
+                                                                                                                    resource.pos[1],
+                                                                                                                    resource.type,
+                                                                                                                    resource.amount)
           print "-----------------------------------------------------------------------------------------------"
 
 def display_building_atributes(Building_list):
@@ -129,9 +131,11 @@ def display_building_atributes(Building_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for build in Building_list:
-          print "|  {}  |  {}  |   {}   |     {}     |     {}     |                                                ".format(build.name,
-                                                                                                                          build.pos,
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   |     {4}     |     {5}     |                           ".format(build.name,
+                                                                                                                          build.pos[0],
+                                                                                                                          build.pos[1],
                                                                                                                           build.type,
                                                                                                                           build.unit_capacity,
                                                                                                                           build.inventory_size)
           print "-----------------------------------------------------------------------------------------------"
+          
