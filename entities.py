@@ -4,6 +4,11 @@ from pygame.locals import *
 import all_names
 from random import choice
 
+# 0 = food
+# 1 = wood
+# 2 = stone
+#
+
 """
 
 All game entities
@@ -34,7 +39,8 @@ class Unit(Entity):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, intr_range = 2, inventory = [], inventory_size = 10, speed = 1.0, destination = []): #speed is distance/s, 0.1 s/cycle (not sure)
+     def __init__(self, pos, intr_range = 2, inventory = [], inventory_size = 10, speed = 1.0, collect_speed = 1.0, 
+                  destination = []): #speed is distance/s, 0.1 s/cycle (not sure)
           self.pos = pos
           self.name = Entity.random_name()
           self.intr_range = intr_range 
@@ -42,6 +48,7 @@ class Unit(Entity):
           self.destination = destination
           self.inventory = inventory
           self.inventory_size = inventory_size
+          self.collect_speed = collect_speed
 
 class Building(Entity):
      """
@@ -117,11 +124,11 @@ def display_resource_atributes(Resource_list):
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for resource in Resource_list:
-          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   |  {4}  |                                         ".format(resource.name,
-                                                                                                                    resource.pos[0],
-                                                                                                                    resource.pos[1],
-                                                                                                                    resource.type,
-                                                                                                                    resource.amount)
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   |  {4:.2f}  |                                      ".format(resource.name,
+                                                                                                                     resource.pos[0],
+                                                                                                                     resource.pos[1],
+                                                                                                                     resource.type,
+                                                                                                                     resource.amount)
           print "-----------------------------------------------------------------------------------------------"
 
 def display_building_atributes(Building_list):

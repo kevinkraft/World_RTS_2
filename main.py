@@ -21,6 +21,9 @@
 #  map resource is an entity class, inventory resource is an item class
 #  ability to collect resources
 #   action list(Done)
+#    make sure you can only get action list for units, for now
+#   add to inventory
+#    make a new item instance in each run then make a section to consolidate unit inventories.(done)
 #   
 # HP
 #  Buildings and units have HP, resource entities dont
@@ -29,17 +32,20 @@
 # Buildings
 #  Made with random name for each type. MAke three types for now but only use one.
 #
+#Problems:
+# Inventory display is always the same, regardless of what unit is selected
 
 import sys
-from entities import *
-from actions import *
-from terrains import *
 import pygame
 from pygame.locals import *
-import all_names
 from random import randint
 from math import sqrt
 from math import pow
+from entities import *
+from actions import *
+from terrains import *
+from items import *
+import all_names
 
 """
 
@@ -73,6 +79,7 @@ def main():
     Resource_list = []
     Building_list = []
     collect_list = []
+    item_list = [] #temp, not actually necessary, for diagnosis only
 
     #vals
     start_units = 3
@@ -165,19 +172,34 @@ def main():
                 elif the_unit.pos[0] > the_unit.destination[0]:
                     the_unit.pos[0] = the_unit.pos[0] - distance_per_cycle
         
-        #collectiong
+        #collecting resources
         for collect_ in collect_list:
             if get_dist_between(collect_.target, collect_.acter) > collect_.acter.intr_range:
                 collect_list.remove(collect_) #remove if acter has moved too far away
                 del collect_
                 continue
             else:
-                pass
-            
+                collects_per_cycle = collect_.acter.collect_speed/60.0
+                collect_.target.amount = collect_.target.amount - collects_per_cycle
+                item = Item(collect_.target.type, collects_per_cycle) #type, amount, name
+                item.set_item_atributes(res_type_names)
+                item_list.append(item)
+                the_acter = collect_.acter
+                inv = the_acter.inventory
+                inv.append(item)
 
-
-
-    
+        #consolidate unit inventories
+        for unit in Unit_list:
+            for item in unit.inventory:
+                for other_item in unit.inventory:
+                    if other_item == item:
+                        pass
+                    else:
+                        if item.type == other_item.type:
+                            item.amount = item.amount + other_item.amount
+                            unit.inventory.remove(other_item)
+                            del other_item
+                
         #timing
         if milliseconds > 1000:
             seconds += 1
@@ -277,10 +299,13 @@ def main():
                     entities_in_range = [] 
                     str_action_list = [] #string of possible actions
                     type_action_list =[]
+                    if selection == []:
+                        print "No Unit Selected"
+                        break
+                    if type(selection) is Building or type(selection) is Resource:
+                        print "Building actions list coming soon"
+                        continue
                     for entity in Entity_list: #distance between two points
-                        if selection == []:
-                            print "No Unit Selected"
-                            break
                         dist_between = get_dist_between(entity, selection)                    
                         if dist_between < selection.intr_range:
                             entities_in_range.append(entity)
@@ -291,22 +316,28 @@ def main():
                                 str_action_list.append("Enter Buidling {}: coming soon".format(entity.name))
                                 type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
                             if type(entity) is Resource:
-                                str_action_list.append("Mine {}, coming soon".format(entity.name))
+                                str_action_list.append("Collect {}".format(entity.name))
                                 type_action_list.append(2) #2 for collection            
                     choice = make_menu_choice("Select an Action", str_action_list)
                     selected_entity = entities_in_range[choice - 1]
                     selected_action = type_action_list[choice - 1]
-                    print "{} {} selected".format(selected_action, selected_entity.name)                    
                     if selected_action == 0:
                         print "coming soon"
                     if selected_action == 1:
                         print "coming soon"
                     if selected_action == 2:
+                        print "{}, Collect {} selected".format(selected_action, selected_entity.name)                    
                         collect_ = Collect(selection, selected_entity) #acter, target
                         collect_list.append(collect_) 
                 if event.key == pygame.K_y:     
                     #print collection list
                     print collect_list
+                if event.key == pygame.K_j:     
+                    #print selections inventory
+                    if selection == []:
+                        print "No Entity Selected"
+                        continue
+                    display_inventory_atributes(selection.inventory)
                 if event.key == pygame.K_q:
                     #exit
                     pygame.quit()
@@ -382,20 +413,21 @@ def get_dist_between(entity1, entity2):
 #    return amount_list
 
 def main_menu():
-    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","r","b","c","q"], ["Add Unit",
-                                                                                                               "Display Entities",
-                                                                                                               "Select Entity",
-                                                                                                               "Display entity atributes",
-                                                                                                               "Modify Entity Atributes",
-                                                                                                               "Display Menu", 
-                                                                                                               "Unselect Entity",
-                                                                                                               "Display Time",
-                                                                                                               "Move Unit",
-                                                                                                               "Display List",
-                                                                                                               "Display Resources",
-                                                                                                               "Display Buildings",
-                                                                                                               "Do Action",
-                                                                                                               "Quit"])
+    make_menu("What would you like to do?",["a", "d", "s", "p", "o", "m", "u", "t","v", "l","r","b","c","j","q"], ["Add Unit",
+                                                                                                                   "Display Entities",
+                                                                                                                   "Select Entity",
+                                                                                                                   "Display entity atributes",
+                                                                                                                   "Modify Entity Atributes",
+                                                                                                                   "Display Menu", 
+                                                                                                                   "Unselect Entity",
+                                                                                                                   "Display Time",
+                                                                                                                   "Move Unit",
+                                                                                                                   "Display List",
+                                                                                                                   "Display Resources",
+                                                                                                                   "Display Buildings",
+                                                                                                                   "Do Action",
+                                                                                                                   "Display Items",
+                                                                                                                   "Quit"])
     
 
 main()
