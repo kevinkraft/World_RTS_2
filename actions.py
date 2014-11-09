@@ -27,6 +27,5 @@ class Collect(Action):
      def __init__(self, acter, target):        
           self.acter = acter
           self.target = target
-
      
      

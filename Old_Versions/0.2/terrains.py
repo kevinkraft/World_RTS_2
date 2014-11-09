@@ -8,29 +8,33 @@ Terrain will be defined by a top left corner position of a square of a certain l
 
 """
 
-class Terrain(object):
+class terrain(object):
      """
 
      All terrains
 
      """
-     def __init__(self, pos, terr_type, length, name = 'default', pointlist = []):        
-        self.pos = pos
-        self.type = terr_type
-        self.length = length
-        self.name = name
-        self.pointlist = pointlist
-
+     def __init__(self, pos, terr_type, length, name = 'default', pointlist = [], passable = True):        
+          self.pos = pos
+          self.type_ = terr_type
+          self.length = length
+          self.name = name
+          self.pointlist = pointlist
+          self.passable = passable
+          
      def set_terr_parameters(self):
           #grassland
-          if self.type == 0 :
+          if self.type_ == 0 :
                name = 'Grassland'
+               self.passable = True
           #water
-          if self.type == 1:
+          if self.type_ == 1:
                name = 'Water'
+               self.passable = False
           #mountains
-          if self.type == 2:
+          if self.type_ == 2:
                name = 'Mountain'
+               self.passable = False
           self.name = name
           self.speed_multi = 1 #all the same for now
                          

@@ -16,7 +16,7 @@ class terrain(object):
      """
      def __init__(self, pos, terr_type, length, name = 'default', pointlist = [], passable = True):        
           self.pos = pos
-          self.type = terr_type
+          self.type_ = terr_type
           self.length = length
           self.name = name
           self.pointlist = pointlist
@@ -24,15 +24,15 @@ class terrain(object):
           
      def set_terr_parameters(self):
           #grassland
-          if self.type == 0 :
+          if self.type_ == 0 :
                name = 'Grassland'
                self.passable = True
           #water
-          if self.type == 1:
+          if self.type_ == 1:
                name = 'Water'
                self.passable = False
           #mountains
-          if self.type == 2:
+          if self.type_ == 2:
                name = 'Mountain'
                self.passable = False
           self.name = name

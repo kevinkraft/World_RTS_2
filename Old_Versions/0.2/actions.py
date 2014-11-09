@@ -18,15 +18,14 @@ class Action(object):
           self.acter = acter
           self.target = target
 
-class Mine(Action):
+class Collect(Action):
      """
 
-     The mining action
+     The collecting, mining action
 
      """
      def __init__(self, acter, target):        
           self.acter = acter
           self.target = target
-
      
      
