@@ -36,9 +36,10 @@ class Entity_HP(Entity):
      All game entities with HP
 
      """
-     def __init__(self, pos, inventory = [], HP = 10):        
+     def __init__(self, pos, inventory = [], HP = 10, action = []):        
           self.HP = 10
           self.inventory = inventory[:]
+          self.action = action[:]
           super(Entity_HP, self).__init__(pos)
           
 #---------------------------------------------------------------------------------
@@ -49,21 +50,16 @@ class Unit(Entity_HP):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, intr_range = 2, inventory = [], HP = 10, inventory_size = 10, speed = 1.0, collect_speed = 1.0, 
-                  destination = [], action = []): #speed is distance/s, 0.1 s/cycle (not sure)
+     def __init__(self, pos, intr_range = 2, inventory = [], HP = 10, action = [], inventory_size = 10, speed = 1.0, collect_speed = 1.0,
+                  destination = []):
+          #speed is distance/s, 0.1 s/cycle 
           self.name = Entity.random_name()
           self.intr_range = intr_range 
           self.speed = speed
-          self.destination = destination
           self.inventory_size = inventory_size
           self.collect_speed = collect_speed
-          self.action = action[:]
-          super(Unit, self).__init__(pos, inventory, HP)
-
-#     def UpdateAction(self):
-#          #clears current action if both actions can't be done at the same time
-#          for action_ in self.action:
-#               del action_
+          self.destination = destination[:]
+          super(Unit, self).__init__(pos, inventory, HP, action)
           
 #---------------------------------------------------------------------------------
 
@@ -73,12 +69,12 @@ class Building(Entity_HP):
      All structures
 
      """
-     def __init__(self, pos, building_type, inventory = [], HP = 10, inventory_size = 0, unit_capacity = 0):        
+     def __init__(self, pos, building_type, inventory = [], HP = 10, action = [], inventory_size = 0, unit_capacity = 0):        
           self.name = Entity.random_name()
           self.type_ = building_type
           self.inventory_size = inventory_size
           self.unit_capacity = unit_capacity
-          super(Building, self).__init__(pos, inventory, HP)
+          super(Building, self).__init__(pos, inventory, HP, action)
 
      def set_building_atributes(self, building_type_names):
           #main hut
