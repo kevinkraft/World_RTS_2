@@ -14,22 +14,22 @@
 #Orders
 #  Complex so do it with classes
 #  Carried by people in their inventories
-#  Unit eill have an action artibute to contain current action
+#  Unit will have an action artibute to contain current action
 #  Unit will have an order list, when an action is finished the first item in order will become the action
 #  So an order will be a series of actions in a list
 #Actions
-# Add movement to actions
+# Add movement to actions(done)
 #   Complete overhaul
-#     Movement will be an action, with an acter and destination
-#     Will need a separate class to inplement this
-#     need to remove the destination atribute of a unit
-#     The unit will have an action which contains the action class instance to be done
-# Add inventory capacity
+#     Movement will be an action, with an acter and destination(done)
+#     Will need a separate class to inplement this(done)
+#     need to remove the destination atribute of a unit(still going to use it)
+#     The unit will have an action which contains the action class instance to be done (done)
+# Add inventory capacity (done)
 # Add return to stockpile
 # Add choice to place inventory in stockpile   
 #HP
 # Implement attack
-# Buildings
+#Buildings
 # Implement enter building
 
 import sys
@@ -74,7 +74,6 @@ def main():
     terr_list = []
     Resource_list = []
     Building_list = []
-    action_list = []
 
     #vals
     start_units = 3
@@ -125,6 +124,11 @@ def main():
     Entity_list.append(building2)
     Building_list.append(building2)
 
+    #set units default stockpile
+    for unit in Unit_list:
+        nearest_stockpile = unit.GetNearestStockpile(Building_list)
+        unit.stockpile = nearest_stockpile
+
     #initial map resources
     res_type_names = set_entity_type_names(3) #set random name for each type
     for i in range(0, start_map_resources):
@@ -144,24 +148,30 @@ def main():
     while 1:
                     
         #do actions
-        for l in range(0, len(action_list)):
+        for unit in Unit_list:
+            if unit.action == []:
+                continue
+            action_ = unit.action[0] #takes the first action, which is the current order 
             #collecting resources
-            action_ = action_list[l]
-            if type(action_) is Collect:
+            if isinstance(action_, Collect):
                 collect_ = action_
-                if get_dist_between(collect_.target, collect_.acter) > collect_.acter.intr_range:
-                    action_list.remove(collect_) #remove if acter has moved too far away
+                if collect_.DoCollect(res_type_names) == True: #true if inventory full or acter out of range
+                    unit.action.remove(collect_) #remove if acters inventory is full or acter out of range
                     del collect_
+                    #go back to stockpile when inventory full
+                    unit.MoveTo(unit.stockpile.pos)
                     continue
-                else:
-                    collect_.DoCollect()
+                    
             #movements
-            if type(action_) is Movement: 
+            elif isinstance(action_, Movement): 
                 move_ = action_
-                move_.DoMove()
+                if move_.DoMove() == True: #do movement, true is destination reached
+                    unit.action.remove(move_) #remove from action list if destination reached
+                    del move_
             else:
+                print type(action_)
                 print 'That action isnt implemented yet'
-                action_list.remove(action_)
+                unit.action.remove(action_)
                 del action_
 
         #consolidate unit inventories
@@ -262,9 +272,7 @@ def main():
                         else:
                             new_x = ReceiveInput('New x-coordinate:', 'Number') #string, option
                             new_y = ReceiveInput('New y-xcoordinate:', 'Number')
-                            move_ = Movement(selection, [new_x, new_y]) #acter, destination
-                            action_list.append(move_)
-                            selection.destination = [new_x, new_y]
+                            selection.MoveTo([new_x, new_y])
                             break #break while loop
                 if event.key == pygame.K_l:
                     #list unit properties
@@ -277,7 +285,6 @@ def main():
                     display_building_atributes(Building_list)
                 if event.key == pygame.K_c:
                     #possible actions for unit 
-                    
                     entities_in_range = [] 
                     str_action_list = [] #string of possible actions
                     type_action_list =[]
@@ -288,15 +295,26 @@ def main():
                         print 'Building actions list coming soon'
                         continue
                     for entity in Entity_list: #distance between two points
+                        #0 attack
+                        #1 enter
+                        #2 collect
+                        #3 exchange inventory
+                        if entity is selection:
+                            continue 
                         dist_between = get_dist_between(entity, selection)                    
                         if dist_between < selection.intr_range:
                             entities_in_range.append(entity)
+                            if type(entity) is Unit or Building:
+                                str_action_list.append('Switch inventory with {} {}: coming soon'.format(type(entity).__name__, entity.name))
+                                type_action_list.append(3) #3 for exchange inventory                                
                             if type(entity) is Unit:
                                 str_action_list.append('Attack {}, coming soon'.format(entity.name))
                                 type_action_list.append(0) #0 for attack
                             if type(entity) is Building:
                                 str_action_list.append('Enter Buidling {}: coming soon'.format(entity.name))
                                 type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
+                                str_action_list.append('Switch inventory with Buidling {}: coming soon'.format(entity.name))
+                                type_action_list.append(3) #3 for exchange inventory
                             if type(entity) is Resource:
                                 str_action_list.append('Collect {}'.format(entity.name))
                                 type_action_list.append(2) #2 for collection            
@@ -312,10 +330,10 @@ def main():
                     if selected_action == 2:
                         print '{}, Collect {} selected'.format(selected_action, selected_entity.name)                    
                         collect_ = Collect(selection, selected_entity) #acter, target
-                        action_list.append(collect_) 
-                if event.key == pygame.K_y:     
-                    #print action list
-                    print action_list
+                        selection.action = [collect_]
+                    if selected_action == 3:
+                        print '{}, Exchange inventory with {} selected'.format(selected_action, selected_entity.name)
+                        
                 if event.key == pygame.K_h:     
                     #print unit inventories
                     for i in range(0, len(Unit_list)):

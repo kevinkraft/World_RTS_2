@@ -3,6 +3,8 @@ import pygame
 from pygame.locals import *
 import all_names
 from random import choice
+from items import *
+from actions import *
 
 """
 
@@ -42,24 +44,24 @@ class Entity_HP(Entity):
           self.action = action[:]
           super(Entity_HP, self).__init__(pos)
           
-#---------------------------------------------------------------------------------
+     def GetInventorySize(self):
+          #returns the total size of everything currently in the entity inventory
+          total_size = 0
+          for item in self.inventory:
+               total_size = total_size + item.GetTotalSize()
+          return total_size
 
-class Unit(Entity_HP):
-     """
-
-     All movable entities. i.e. people
-
-     """
-     def __init__(self, pos, intr_range = 2, inventory = [], HP = 10, action = [], inventory_size = 10, speed = 1.0, collect_speed = 1.0,
-                  destination = []):
-          #speed is distance/s, 0.1 s/cycle 
-          self.name = Entity.random_name()
-          self.intr_range = intr_range 
-          self.speed = speed
-          self.inventory_size = inventory_size
-          self.collect_speed = collect_speed
-          self.destination = destination[:]
-          super(Unit, self).__init__(pos, inventory, HP, action)
+     def GetNearestStockpile(self, Building_list):
+          #returns pointer to nearest stockpile
+          dist = []
+          pointer_list = []
+          for Building in Building_list:
+               if Building.type_ == 1: #1 for stockpile
+                   dist.append(get_dist_between(self, Building))
+                   pointer_list.append(Building)
+               else:
+                    continue
+          return pointer_list[dist.index(min(dist))] #return pointer with min dist
           
 #---------------------------------------------------------------------------------
 
@@ -69,7 +71,7 @@ class Building(Entity_HP):
      All structures
 
      """
-     def __init__(self, pos, building_type, inventory = [], HP = 10, action = [], inventory_size = 0, unit_capacity = 0):        
+     def __init__(self, pos = [0,0], building_type = 0, inventory = [], HP = 10, action = [], inventory_size = 0, unit_capacity = 0):        
           self.name = Entity.random_name()
           self.type_ = building_type
           self.inventory_size = inventory_size
@@ -87,6 +89,32 @@ class Building(Entity_HP):
                self.inventory_size = 200
 
                
+#---------------------------------------------------------------------------------
+
+class Unit(Entity_HP):
+     """
+
+     All movable entities. i.e. people
+
+     """
+     def __init__(self, pos, intr_range = 2, inventory = [], HP = 10, action = [], inventory_size = 10, speed = 1.0, collect_speed = 1.0,
+                  destination = [], stockpile = Building()):
+          #speed is distance/s, 0.1 s/cycle 
+          self.name = Entity.random_name()
+          self.intr_range = intr_range 
+          self.speed = speed
+          self.inventory_size = inventory_size
+          self.collect_speed = collect_speed
+          self.destination = destination[:]
+          self.stockpile = stockpile
+          super(Unit, self).__init__(pos, inventory, HP, action)
+          
+     def MoveTo(self, destination):
+          move_ = Movement(self, destination) #acter, destination
+          self.destination = destination
+          self.action = [move_]
+
+
 #---------------------------------------------------------------------------------
 
 class Resource(Entity):
