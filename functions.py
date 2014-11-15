@@ -16,30 +16,36 @@ Some useful functions for all parts of the game
 def ReceiveInput(string, option = '', min_ = False, max_ = False):
     #get keyboard input, handle invalid choices
     while True:
+        #print "type 'CANCEL' to go back"
         try:
             val = input(str(string+' '))
         except NameError:
+            print 'NameError'
             print 'invalid Choice'
             continue
         except SyntaxError:
+            print 'SyntaxError'
             print 'invalid Choice'
             continue
-        if option == 'Number':
-            if isinstance(val, (int, long, float)) == False:
-                print 'Choice must be a number'
-                continue
-            if min_ != False:
-                if val < min_:
-                    print 'Choice must be bigger than {}'.format(min_)
+        #if str(val) == 'CANCEL':
+        #    val = False #cancel and go back
+        else:
+            if option == 'Number':
+                if isinstance(val, (int, long, float)) == False:
+                    print 'Choice must be a number'
                     continue
-            if max_ != False:
-                if val > max_:
-                    print 'Choice must be smaller than {}'.format(max_)
+                if min_ != False:
+                    if val < min_:
+                        print 'Choice must be bigger than {}'.format(min_)
+                        continue
+                if max_ != False:
+                    if val > max_:
+                        print 'Choice must be smaller than {}'.format(max_)
+                        continue
+            elif option == 'String':
+                if type(val) is not string:
+                    print 'Choice must be a string'
                     continue
-        elif option == 'String':
-            if type(val) is not string:
-                print 'Choice must be a string'
-                continue
         return val
 
 #-------------------------------------------------------------------
@@ -47,12 +53,12 @@ def ReceiveInput(string, option = '', min_ = False, max_ = False):
 #-------------------------------------------------------------------
 
 def make_menu_choice(*strs):
-    #menu with built in choice
+    #menu with built in choice. Pass a title string and a list of str choices
     print '-----------------------------------------'
     print strs[0]
     for i in range(0,len(strs[1])):
         print '{}) {}'.format(i+1, strs[1][i])
-    print '{}) Cancel'.format(len(strs[1]) + 1) 
+    print '{}) Go Back'.format(len(strs[1]) + 1) 
     print '----------------------------------------'
     choice = ReceiveInput('>', 'Number', 1, len(strs[1]) + 1)
     if choice == len(strs[1]) + 1:
@@ -69,20 +75,21 @@ def make_menu(*strs):
     print '----------------------------------------'
 
 def main_menu():
-    make_menu('What would you like to do?',['a', 'd', 's', 'o', 'm', 'u', 't','v', 'l','r','b','c','j','q'], ['Add Unit',
-                                                                                                              'Display Entities',
-                                                                                                              'Select Entity',
-                                                                                                              'Modify Entity Atributes',
-                                                                                                              'Display Menu', 
-                                                                                                              'Unselect Entity',
-                                                                                                              'Display Time',
-                                                                                                              'Move Unit',
-                                                                                                              'Display List',
-                                                                                                              'Display Resources',
-                                                                                                              'Display Buildings',
-                                                                                                              'Do Action',
-                                                                                                              'Display Items',
-                                                                                                              'Quit'])
+    make_menu('What would you like to do?',['a', 'd', 's', 'o', 'm', 'u', 't','v', 'l','r','b','c','j','q', 'x'], ['Add Unit',
+                                                                                                                   'Display Entities',
+                                                                                                                   'Select Entity',
+                                                                                                                   'Modify Entity Atributes',
+                                                                                                                   'Display Menu', 
+                                                                                                                   'Unselect Entity',
+                                                                                                                   'Display Time',
+                                                                                                                   'Move Unit',
+                                                                                                                   'Display Units',
+                                                                                                                   'Display Resources',
+                                                                                                                   'Display Buildings',
+                                                                                                                   'Do Action',
+                                                                                                                   'Display Items',
+                                                                                                                   'Quit',
+                                                                                                                   'Display Action'])
     
 #-------------------------------------------------------------------
 # Maths

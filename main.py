@@ -14,23 +14,23 @@
 #Orders
 #  Complex so do it with classes
 #  Carried by people in their inventories
-#  Unit will have an action artibute to contain current action
-#  Unit will have an order list, when an action is finished the first item in order will become the action
+#  Unit will have an action artibute to contain current action (done)
+#  Unit will have an order list, when an action is finished the first item in order will become the action (done)
+#    Action_list and order list are now the same thing (done)
 #  So an order will be a series of actions in a list
 #Actions
-# Add movement to actions(done)
-#   Complete overhaul
-#     Movement will be an action, with an acter and destination(done)
-#     Will need a separate class to inplement this(done)
-#     need to remove the destination atribute of a unit(still going to use it)
-#     The unit will have an action which contains the action class instance to be done (done)
 # Add inventory capacity (done)
 # Add return to stockpile
-# Add choice to place inventory in stockpile   
+#   Add automatic exchange_ with stockpile
+#   Add choice to place inventory in stockpile   
 #HP
 # Implement attack
 #Buildings
 # Implement enter building
+#
+#
+#Problem:
+#  Look at ReceiveInput, CANCEL doesn't work, I don't think the min option works either. See SetUpExchange
 
 import sys
 import pygame
@@ -70,10 +70,10 @@ def main():
     Entity_list = []
     Unit_list = []
     selection = []
-    Order_list = []
     terr_list = []
     Resource_list = []
     Building_list = []
+    Entity_HP_list = []
 
     #vals
     start_units = 3
@@ -146,51 +146,103 @@ def main():
 
     #main game loop
     while 1:
-                    
+
+        #kill dead entities/remove depleted resources. Entities are marked as dead here but
+        #not removed till the end of the loop so actions involving them are not interupted
+        for entity in Entity_list:
+            if isinstance(entity, Unit):
+                if entity.HP <= 0:
+                    entity.dead = True
+                    print '{0} {1} died, they will not be fogotten'.format(type(entity).__name__, entity.name)
+            if isinstance(entity, Building):
+                if entity.HP <= 0:
+                    entity.dead = True
+                    print '{0} {1} was destroyed, we must rebuild'.format(type(entity).__name__, entity.name)
+            elif isinstance(entity, Resource):
+                if entity.amount <= 0:
+                    entity.dead = True
+                    print
+                
         #do actions
-        for unit in Unit_list:
-            if unit.action == []:
+        Entity_HP_list = []
+        Entity_HP_list = Unit_list + Building_list
+        for entity in Entity_HP_list:
+            if entity.action == []:
                 continue
-            action_ = unit.action[0] #takes the first action, which is the current order 
-            #collecting resources
-            if isinstance(action_, Collect):
+            action_ = entity.action[0] #takes the first action, which is the current order 
+            #attack
+            if isinstance(action_, Attack):
+                attack_ = action_
+                attack_result = attack_.DoAttack()
+                if attack_result == False: #target moved away
+                    entity.MoveTo(attack_.target.pos, True) #pos, option. True means the action_list will be prepended not overidden
+                elif attack_result == True: #target dead, delete attack
+                    entity.action.remove(attack_)
+                    del attack_
+                else:
+                    continue #attack cycle complete
+            #collect
+            elif isinstance(action_, Collect):
                 collect_ = action_
                 if collect_.DoCollect(res_type_names) == True: #true if inventory full or acter out of range
-                    unit.action.remove(collect_) #remove if acters inventory is full or acter out of range
+                    entity.action.remove(collect_) #remove if acters inventory is full or acter out of range
                     del collect_
                     #go back to stockpile when inventory full
-                    unit.MoveTo(unit.stockpile.pos)
+                    entity.MoveTo(entity.stockpile.pos)
                     continue
-                    
-            #movements
+            #movement
             elif isinstance(action_, Movement): 
                 move_ = action_
                 if move_.DoMove() == True: #do movement, true is destination reached
-                    unit.action.remove(move_) #remove from action list if destination reached
+                    entity.action.remove(move_) #remove from action list if destination reached
                     del move_
+            #exchange
+            elif isinstance(action_, Exchange):
+                exchange_ = action_
+                if exchange_.MakeExchange() == False:
+                    #false if something is wrong 
+                    print 'Something is wrong with the exchange order you gave to {0}'.format(exchange_.acter)
+                    if len(exchange_.item_list) != 1: #if all items were chosen need to change what is printed
+                        print 'You asked them to give all of their items to {0} {1}'.format(type(exchange_.target).__name__,
+                                                                                            exchange_.target.name)
+                        print '{0} has the following items'.format(exchange_.acter.name)
+                        display_inventory_atributes(exchange_.acter)    
+                    else:
+                        print 'You asked them to give {0} {1} to {2} {3}'.format(exchange_.item_amount_list[0], exchange_.item_list[0].name,
+                                                                                 type(exchange_.target).__name__, exchange_.target.name)
+                    print 'Resubmit choice coming soon. Cancelling exchange'
+                else:
+                    #exchange completed sucessfully
+                    entity.action.remove(exchange_)
+                    del exchange_
             else:
                 print type(action_)
                 print 'That action isnt implemented yet'
-                unit.action.remove(action_)
+                entity.action.remove(action_)
                 del action_
 
-        #consolidate unit inventories
-        for i in range(0, len(Unit_list)):
-            unit = Unit_list[i]
-            if unit.inventory == []:
+        #consolidate unit inventories, remove empty items
+        for i in range(0, len(Entity_HP_list)):
+            entity = Entity_HP_list[i]
+            if entity.inventory == []:
                 continue
             else:
-                for j in range(0, len(unit.inventory)):
-                    item = unit.inventory[j]
-                    for k in range(0, len(unit.inventory)):
-                        other_item = unit.inventory[k]
+                for j in range(0, len(entity.inventory)):
+                    item = entity.inventory[j]
+                    if item.amount <= 0:
+                        #remove if the item is empty
+                        entity.inventory.remove(item)
+                        del item
+                        break
+                    for k in range(0, len(entity.inventory)):
+                        other_item = entity.inventory[k]
                         if other_item == item:
                             Remove_item = False
                             continue
                         else:
                             if item.type_ == other_item.type_:
                                 item.amount = item.amount + other_item.amount
-                                unit.inventory.remove(other_item)
+                                entity.inventory.remove(other_item)
                                 del other_item
                                 Remove_item = True
                                 break
@@ -242,6 +294,7 @@ def main():
                         #name_list =  make_name_list(Entity_list) #remove if everything is working
                         choice = make_menu_choice('Select an entity', make_name_list(Entity_list))
                         if choice == False:
+                            print 'Exited'
                             continue #continue with next event if user cancels
                         selection = Entity_list[choice-1]
                         print '{} selected'.format(selection.name)
@@ -251,7 +304,13 @@ def main():
                         print 'No Entity Selected'
                         continue
                     new_x = ReceiveInput('New x-coordinate:', 'Number')
+                    if new_x == False:
+                        print 'Exited'
+                        continue #user cancels
                     new_y = ReceiveInput('New y-coordinate:', 'Number')
+                    if new_y == False:
+                        print 'Exited'
+                        continue #user cancels
                     selection.pos = [new_x, new_y]
                 if event.key == pygame.K_m:
                      #reprint main menu
@@ -271,7 +330,13 @@ def main():
                             break
                         else:
                             new_x = ReceiveInput('New x-coordinate:', 'Number') #string, option
+                            #if new_x == False:
+                            #    print 'Exited'
+                            #    continue #user cancels
                             new_y = ReceiveInput('New y-xcoordinate:', 'Number')
+                            #if new_y == False:
+                            #    print 'Exited'
+                            #    continue #user cancels
                             selection.MoveTo([new_x, new_y])
                             break #break while loop
                 if event.key == pygame.K_l:
@@ -303,37 +368,65 @@ def main():
                             continue 
                         dist_between = get_dist_between(entity, selection)                    
                         if dist_between < selection.intr_range:
-                            entities_in_range.append(entity)
-                            if type(entity) is Unit or Building:
-                                str_action_list.append('Switch inventory with {} {}: coming soon'.format(type(entity).__name__, entity.name))
-                                type_action_list.append(3) #3 for exchange inventory                                
-                            if type(entity) is Unit:
-                                str_action_list.append('Attack {}, coming soon'.format(entity.name))
-                                type_action_list.append(0) #0 for attack
-                            if type(entity) is Building:
+                            if isinstance(entity, Building):
                                 str_action_list.append('Enter Buidling {}: coming soon'.format(entity.name))
                                 type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
-                                str_action_list.append('Switch inventory with Buidling {}: coming soon'.format(entity.name))
-                                type_action_list.append(3) #3 for exchange inventory
-                            if type(entity) is Resource:
+                                entities_in_range.append(entity)
+                            if isinstance(entity, Resource):
                                 str_action_list.append('Collect {}'.format(entity.name))
                                 type_action_list.append(2) #2 for collection            
+                                entities_in_range.append(entity)
+                            if isinstance(entity, (Unit, Building)):
+                                str_action_list.append('Attack {0} {1}'.format(type(entity).__name__, entity.name))
+                                type_action_list.append(0) #0 for attack
+                                entities_in_range.append(entity)
+                                str_action_list.append('Switch inventory with {} {}'.format(type(entity).__name__, entity.name))
+                                type_action_list.append(3) #3 for exchange inventory                                            
+                                entities_in_range.append(entity)
                     choice = make_menu_choice('Select an Action', str_action_list)
                     if choice == False:
+                        print 'Exited'
                         continue #user cancels, continue looping over the next event
                     selected_entity = entities_in_range[choice - 1]
                     selected_action = type_action_list[choice - 1]
                     if selected_action == 0:
-                        print 'coming soon'
+                        #attack
+                        print '{0} will attack {1} {2}'.format(selection.name, type(selected_entity).__name__, selected_entity.name)
+                        attack_ = Attack(selection, selected_entity)
+                        selection.action = [attack_]
                     if selected_action == 1:
-                        print 'coming soon'
+                        #enter
+                        print 'coming soon,{0}'.format(selected_entity.name)
                     if selected_action == 2:
+                        #unit collects resource
                         print '{}, Collect {} selected'.format(selected_action, selected_entity.name)                    
                         collect_ = Collect(selection, selected_entity) #acter, target
                         selection.action = [collect_]
                     if selected_action == 3:
+                        #exchange inventory between entities
                         print '{}, Exchange inventory with {} selected'.format(selected_action, selected_entity.name)
-                        
+                        exchange_underway = True
+                        while exchange_underway: #while loop so user can cancel and go back a step
+                            dir_choice = make_menu_choice('Choose Direction',['{0} to {1}'.format(selection.name, selected_entity.name),
+                                                                              '{0} to {1}'.format(selected_entity.name, selection.name)])
+                            if dir_choice == False:
+                                print 'Exited'
+                                break #leave the exchange if user exits
+                            while True: #this loop allow the user to go back
+                                str_item_list = [] #stores the names of the items
+                                if dir_choice == 1:
+                                    if SetUpExchange(selection, selected_entity) == True:
+                                        exchange_underway = False #finished sucessfully, leave while loops
+                                        break
+                                    else:
+                                        break #go back one step, but not all the way
+                                if dir_choice == 2:
+                                    if SetUpExchange(selected_entity, selection) == True:
+                                        exchange_underway = False #finished sucessfully, leave while loops
+                                        break
+                                    else:
+                                        break #go back one step, but not all the way
+
                 if event.key == pygame.K_h:     
                     #print unit inventories
                     for i in range(0, len(Unit_list)):
@@ -345,10 +438,27 @@ def main():
                         print 'No Entity Selected'
                         continue
                     display_inventory_atributes(selection)
+                if event.key == pygame.K_x:
+                    #print selections action
+                    if selection == []:
+                        print 'No Entity Selected'
+                        continue
+                    selection.DisplayEntityAction()
                 if event.key == pygame.K_q:
                     #exit
                     pygame.quit()
                     sys.exit()
+        
+        #remove dead entities
+        for entity in Entity_list:
+            if entity.dead == True:
+                Entity_list.remove(entity)
+                if isinstance(entity, Building):
+                    Building_list.remove(entity)
+                if isinstance(entity, Unit):
+                    Unit_list.remove(entity)
+                if isinstance(entity, Resource):
+                    Resource_list.remove(entity)
 
 main()
 

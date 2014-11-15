@@ -37,9 +37,14 @@ class Item(object):
                self.name = res_type_names[2]
                self.size = 2
 
-     def GetTotalSize(self):
-          #returns the total size of that type in the inventory
-          return (self.size)*(self.amount)
+     def GetTotalSize(self, option = True, amount = 0):
+          if option == True:
+               amount = self.amount
+          #returns the total size of that item. Its default to the amount factor being the amount
+          #of that item but can be changed if you just want to know the size of a fraction of the
+          #amount. See MakeExchange().
+          val = (self.size)*(amount)
+          return val
           
 def display_inventory_atributes(selection):
      inv = selection.inventory
