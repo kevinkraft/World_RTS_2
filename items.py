@@ -26,6 +26,9 @@ class Item(object):
           self.size = size
 
      def set_item_atributes(self, res_type_names):
+     #################################################################################################
+     #   Note that Resource Type MUST match with its corresponding item type. See AutomaticExchange
+     #################################################################################################
           #food
           if self.type_ == 0:
                self.name = res_type_names[0]
@@ -49,15 +52,41 @@ class Item(object):
 def display_inventory_atributes(selection):
      inv = selection.inventory
      print "--------------------------------------------------------------------------------------------------"
-     print "|  Name  |  Type  |  Amount  |  Unit Size |  Total Size  |                                        "
+     print "|  Name  |  Type  |  Amount  |  Unit Size |  Total Size  |   Capacity |                           "
      print "--------------------------------------------------------------------------------------------------"
-     print "--------------------------------------------------------------------------------------------------"             
      for j in range(0, len(inv)):
           item = inv[j]
-          print "|  {0}  |  {1}  |    {2:.2f}    |   {3}   |  {4:.2f}  |                                     ".format(item.name,
-                                                                                                                      item.type_,
-                                                                                                                      item.amount,
-                                                                                                                      item.size,
-                                                                                                                      item.GetTotalSize())
-          print "--------------------------------------------------------------------------------------------"
+          print "|  {0}  |  {1}  |    {2:.2f}    |      {3}      |     {4:.2f}     |        {5}       |       ".format(item.name, 
+                                                                                                                       item.type_, item.amount, item.size, item.GetTotalSize(), selection.inventory_capacity)
 
+     print "--------------------------------------------------------------------------------------------"
+
+def ConsolidateInventories(Entity_HP_list):
+    #consolidate unit inventories, remove empty items
+    for i in range(0, len(Entity_HP_list)):
+        entity = Entity_HP_list[i]
+        if entity.inventory == []:
+            continue
+        else:
+            for j in range(0, len(entity.inventory)):
+                item = entity.inventory[j]
+                if item.amount < 0.01:
+                    #remove if the item is empty
+                    entity.inventory.remove(item)
+                    del item
+                    break
+                for k in range(0, len(entity.inventory)):
+                    other_item = entity.inventory[k]
+                    if other_item == item:
+                        Remove_item = False
+                        continue
+                    else:
+                        if item.type_ == other_item.type_:
+                            item.amount = item.amount + other_item.amount
+                            entity.inventory.remove(other_item)
+                            del other_item
+                            Remove_item = True
+                            break
+                if Remove_item == True: #this stops iterating over the second item when it has been removed and no longer exists
+                    break
+    return

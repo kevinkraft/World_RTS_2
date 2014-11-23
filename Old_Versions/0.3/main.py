@@ -1,5 +1,5 @@
 #World RTS 2
-#Version: 0.4
+#Version: 0.3
 #
 #Kevin Maguire
 #9/11/14
@@ -12,30 +12,30 @@
 #
 #Add:
 #Orders
-#  Section to allow You to give orders
+#  Complex so do it with classes
+#  Carried by people in their inventories
+#  Unit will have an action artibute to contain current action (done)
+#  Unit will have an order list, when an action is finished the first item in order will become the action (done)
+#    Action_list and order list are now the same thing (done)
+#  So an order will be a series of actions in a list
+#Actions
+# Add inventory capacity (done)
+# Add return to stockpile
+#   Add automatic exchange_ with stockpile
+#   Add choice to place inventory in stockpile   
+#HP
+# Implement attack
 #Buildings
-# Implement enter building(done)
-#   Unit goes into building inventory(into unit_inventory done)
-#   Count the Unit instances in the inventory to match to Unit capacity(done)
-#     Could I just give the entities more atributes? In_Building = True, or In_Building = <entity.building>, or False if not(done)
-#       In this case I could make an entity.GetPos() func anyway to change pos[0],pos[1] to "In Building.name"    (done)
-#Add build building
-#Procreate
-#  This action creates a baby which must be cared for by someone unless it dies and must also be brought food
-#    Add the above feture
-#Add Hunger
-# Add this next
-#I NEED TO SORT OUT MODULE NAMES FOR ACTIONS, MAKE EVERYTHING EASY TO UNDERSTAND AND HAVE THE SAME NAMES
-#  Need some or all of the following modules for each action:
-#    Setup(user interface setup), action_.Do(do now, basic), action_.MakeOrder(do later, extra options), Automatic(depends on whats needed)   
+# Implement enter building
 #
-#Problem: There are too many messages being displayed
+#
+#Problem:
+#  Look at ReceiveInput, CANCEL doesn't work, I don't think the min option works either. See SetUpExchange
 
 import sys
 import pygame
 from pygame.locals import *
 from random import randint
-from config import *
 from entities import *
 from actions import *
 from terrains import *
@@ -45,9 +45,21 @@ from functions import *
 
 """
 
-Main fuction. Do python main.py to run game
+Game Parameters
 
 """
+simple_map = [[2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 1, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 1, 1, 1],
+              [2, 2, 0, 0, 1, 0, 1, 0, 1, 1],
+              [2, 2, 0, 0, 0, 1, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1],
+              [2, 2, 0, 0, 0, 0, 0, 0, 1, 1]]
+current_map = simple_map
+terr_length = 10
 
 def main():
 
@@ -61,7 +73,14 @@ def main():
     terr_list = []
     Resource_list = []
     Building_list = []
-    Entity_HP_list = [] #this is filled in each loop
+    Entity_HP_list = []
+
+    #vals
+    start_units = 3
+    start_map_resources = 3
+    unit_dist_from_you = 2
+    res_dist_from_you = 2
+    building_dist_from_you = 2
 
     #clock
     clock = pygame.time.Clock()
@@ -79,7 +98,7 @@ def main():
 
     #initial units
     #you
-    unit_you = Unit([0,0], intr_range = 10) #pos, intr_range (default = 2)
+    unit_you = Unit([0,0], 10) #pos, intr_rang (default = 2)
     unit_you.name = 'You'
     unit_you.pos = [randint(0,100),randint(0,100)]
     Entity_list.append(unit_you)
@@ -128,22 +147,13 @@ def main():
     #main game loop
     while 1:
 
-        #Decrease Hunger, take damage if hunger is zero
-        for unit in Unit_list:
-            unit.hunger = unit.hunger - hunger_per_cycle
-            if unit.hunger <= 0:
-                unit.hunger = 0
-                unit.HP = unit.HP - hunger_per_cycle_damage
-                if int(unit.HP) % 5 == 0: #print when HP on even number
-                    print '{0} {1} is starving to death'.format(type(unit).__name__, unit.name)
-            
         #kill dead entities/remove depleted resources. Entities are marked as dead here but
         #not removed till the end of the loop so actions involving them are not interupted
         for entity in Entity_list:
             if isinstance(entity, Unit):
                 if entity.HP <= 0:
                     entity.dead = True
-                    print '{0} {1} died, they will not be forgotten'.format(type(entity).__name__, entity.name)
+                    print '{0} {1} died, they will not be fogotten'.format(type(entity).__name__, entity.name)
             if isinstance(entity, Building):
                 if entity.HP <= 0:
                     entity.dead = True
@@ -167,48 +177,77 @@ def main():
                 if attack_result == False: #target moved away
                     entity.MoveTo(attack_.target.pos, True) #pos, option. True means the action_list will be prepended not overidden
                 elif attack_result == True: #target dead, delete attack
-                    attack_.DeleteAction()
+                    entity.action.remove(attack_)
+                    del attack_
                 else:
                     continue #attack cycle complete
             #collect
             elif isinstance(action_, Collect):
                 collect_ = action_
-                collect_result = collect_.DoCollect(res_type_names)
-                if  collect_result == True: #true if inventory full
-                    entity.MoveTo(collect_.target.pos, True) #add return to target to keep collecting
-                    entity.AutomaticExchange(collect_) #add exchange with stockpile
-                    entity.MoveTo(entity.stockpile.pos, True) #add move to stockpile
-                    continue
+                if collect_.DoCollect(res_type_names) == True: #true if inventory full or acter out of range
+                    entity.action.remove(collect_) #remove if acters inventory is full or acter out of range
+                    del collect_
                     #go back to stockpile when inventory full
-                elif collect_result == None: #out of range
-                    collect_.DeleteAction()
+                    entity.MoveTo(entity.stockpile.pos)
                     continue
             #movement
             elif isinstance(action_, Movement): 
                 move_ = action_
                 if move_.DoMove() == True: #do movement, true is destination reached
-                    move_.DeleteAction()
+                    entity.action.remove(move_) #remove from action list if destination reached
+                    del move_
             #exchange
             elif isinstance(action_, Exchange):
                 exchange_ = action_
-                exchange_.MakeOrderExchange()
-            #Enter
-            elif isinstance(action_, Enter):
-                enter_ = action_
-                enter_.DoEnter()
-            #Procreate
-            elif isinstance(action_, Procreate):
-                procreate_ = action_
-                new_entity = procreate_.DoProcreate()
-                Entity_list.append(new_entity)
-                Unit_list.append(new_entity)
+                if exchange_.MakeExchange() == False:
+                    #false if something is wrong 
+                    print 'Something is wrong with the exchange order you gave to {0}'.format(exchange_.acter)
+                    if len(exchange_.item_list) != 1: #if all items were chosen need to change what is printed
+                        print 'You asked them to give all of their items to {0} {1}'.format(type(exchange_.target).__name__,
+                                                                                            exchange_.target.name)
+                        print '{0} has the following items'.format(exchange_.acter.name)
+                        display_inventory_atributes(exchange_.acter)    
+                    else:
+                        print 'You asked them to give {0} {1} to {2} {3}'.format(exchange_.item_amount_list[0], exchange_.item_list[0].name,
+                                                                                 type(exchange_.target).__name__, exchange_.target.name)
+                    print 'Resubmit choice coming soon. Cancelling exchange'
+                else:
+                    #exchange completed sucessfully
+                    entity.action.remove(exchange_)
+                    del exchange_
             else:
                 print type(action_)
                 print 'That action isnt implemented yet'
-                action_.DeleteAction()
+                entity.action.remove(action_)
+                del action_
 
         #consolidate unit inventories, remove empty items
-        ConsolidateInventories(Entity_HP_list)
+        for i in range(0, len(Entity_HP_list)):
+            entity = Entity_HP_list[i]
+            if entity.inventory == []:
+                continue
+            else:
+                for j in range(0, len(entity.inventory)):
+                    item = entity.inventory[j]
+                    if item.amount <= 0:
+                        #remove if the item is empty
+                        entity.inventory.remove(item)
+                        del item
+                        break
+                    for k in range(0, len(entity.inventory)):
+                        other_item = entity.inventory[k]
+                        if other_item == item:
+                            Remove_item = False
+                            continue
+                        else:
+                            if item.type_ == other_item.type_:
+                                item.amount = item.amount + other_item.amount
+                                entity.inventory.remove(other_item)
+                                del other_item
+                                Remove_item = True
+                                break
+                    if Remove_item == True: #this stops iterating over the second item when it has been removed and no longer exists
+                        break
                                         
         #timing
         if milliseconds > 1000:
@@ -238,9 +277,41 @@ def main():
                     Entity_list.append(unit)
                     Unit_list.append(unit)
                     print '{} created'.format(unit.name)
+                if event.key == pygame.K_d:
+                    #display entities
+                    if len(Entity_list) == 0:
+                        print 'There are no entites'
+                        continue
+                    print 'Entity List:'
+                    print make_name_list(Entity_list)
                 if event.key == pygame.K_s:
                     #select entity
-                    selection = SelectEntity(Entity_list)
+                    if len(Entity_list) == 0:
+                        print 'There are no entites'
+                        continue
+                    else:
+                        selection = []
+                        #name_list =  make_name_list(Entity_list) #remove if everything is working
+                        choice = make_menu_choice('Select an entity', make_name_list(Entity_list))
+                        if choice == False:
+                            print 'Exited'
+                            continue #continue with next event if user cancels
+                        selection = Entity_list[choice-1]
+                        print '{} selected'.format(selection.name)
+                if event.key == pygame.K_o:
+                    #modify atributes. this may be useful for quickly moving things for debugging
+                    if selection == []:
+                        print 'No Entity Selected'
+                        continue
+                    new_x = ReceiveInput('New x-coordinate:', 'Number')
+                    if new_x == False:
+                        print 'Exited'
+                        continue #user cancels
+                    new_y = ReceiveInput('New y-coordinate:', 'Number')
+                    if new_y == False:
+                        print 'Exited'
+                        continue #user cancels
+                    selection.pos = [new_x, new_y]
                 if event.key == pygame.K_m:
                      #reprint main menu
                     main_menu()
@@ -258,17 +329,17 @@ def main():
                             print 'No Unit Selected'
                             break
                         else:
-                            new_x = ReceiveInput('New x-coordinate:', 'Number', True) #string, option, cancel_option
-                            if new_x == None:
-                                print 'Exited'
-                                break #user cancels
-                            new_y = ReceiveInput('New y-xcoordinate:', 'Number', True)
-                            if new_y == None:
-                                print 'Exited'
-                                break #user cancels
+                            new_x = ReceiveInput('New x-coordinate:', 'Number') #string, option
+                            #if new_x == False:
+                            #    print 'Exited'
+                            #    continue #user cancels
+                            new_y = ReceiveInput('New y-xcoordinate:', 'Number')
+                            #if new_y == False:
+                            #    print 'Exited'
+                            #    continue #user cancels
                             selection.MoveTo([new_x, new_y])
                             break #break while loop
-                if event.key == pygame.K_d:
+                if event.key == pygame.K_l:
                     #list unit properties
                     display_unit_atributes(Unit_list)
                 if event.key == pygame.K_r:
@@ -286,20 +357,19 @@ def main():
                         print 'No Unit Selected'
                         break
                     if type(selection) is Building or type(selection) is Resource:
-                        print 'Buildings and Resource actions list coming soon'
+                        print 'Building actions list coming soon'
                         continue
                     for entity in Entity_list: #distance between two points
                         #0 attack
                         #1 enter
                         #2 collect
                         #3 exchange inventory
-                        #4 Procreate
                         if entity is selection:
                             continue 
                         dist_between = get_dist_between(entity, selection)                    
                         if dist_between < selection.intr_range:
                             if isinstance(entity, Building):
-                                str_action_list.append('Enter Buidling {}'.format(entity.name))
+                                str_action_list.append('Enter Buidling {}: coming soon'.format(entity.name))
                                 type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
                                 entities_in_range.append(entity)
                             if isinstance(entity, Resource):
@@ -312,10 +382,6 @@ def main():
                                 entities_in_range.append(entity)
                                 str_action_list.append('Switch inventory with {} {}'.format(type(entity).__name__, entity.name))
                                 type_action_list.append(3) #3 for exchange inventory                                            
-                                entities_in_range.append(entity)
-                            if isinstance(entity, Unit):
-                                str_action_list.append('Procreate with {0} {1} {2}'.format(entity.gender, type(entity).__name__, entity.name))
-                                type_action_list.append(4) #4 for procreate
                                 entities_in_range.append(entity)
                     choice = make_menu_choice('Select an Action', str_action_list)
                     if choice == False:
@@ -330,7 +396,7 @@ def main():
                         selection.action = [attack_]
                     if selected_action == 1:
                         #enter
-                        MakeEnterOrder(selection, selected_entity)
+                        print 'coming soon,{0}'.format(selected_entity.name)
                     if selected_action == 2:
                         #unit collects resource
                         print '{}, Collect {} selected'.format(selected_action, selected_entity.name)                    
@@ -360,47 +426,24 @@ def main():
                                         break
                                     else:
                                         break #go back one step, but not all the way
-                    if selected_action == 4:
-                        #procreate
-                        SetupProcreate(selection, selected_entity)                        
+
                 if event.key == pygame.K_h:     
                     #print unit inventories
                     for i in range(0, len(Unit_list)):
                         print i
                         print unit.inventory
-                if event.key == pygame.K_i:     
+                if event.key == pygame.K_j:     
                     #print selections inventory
                     if selection == []:
                         print 'No Entity Selected'
                         continue
                     display_inventory_atributes(selection)
-                if event.key == pygame.K_g:     
-                    #print selected buildings unit inventory
-                    if selection == []:
-                        print 'No Entity Selected'
-                        continue
-                    if not isinstance(selection, Building):
-                        print 'Only buildings can have garrisons'
-                        continue
-                    selection.DisplayGarrison()
-                if event.key == pygame.K_l:
-                    #print selections action
-                    #if selection == []:
-                    #    print 'No Entity Selected'
-                    #    continue
-                    print "--------------------------------------------------------------------"
-                    for unit in Unit_list: 
-                        unit.DisplayEntityAction()
-                    print "--------------------------------------------------------------------"
                 if event.key == pygame.K_x:
-                    #cancel action
+                    #print selections action
                     if selection == []:
                         print 'No Entity Selected'
                         continue
-                    for action_ in selection.action:
-                        action_.DeleteAction()
-                    selection.action = []
-                    print 'All {0} {1} actions cancelled'.format(type(selection).__name__, selection.name)
+                    selection.DisplayEntityAction()
                 if event.key == pygame.K_q:
                     #exit
                     pygame.quit()

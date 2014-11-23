@@ -1,7 +1,6 @@
 import sys
 import pygame
 from pygame.locals import *
-from config import *
 import all_names
 from random import choice
 from items import *
@@ -76,31 +75,6 @@ class Entity_HP(Entity):
           else:
                self.action[0].DisplayAction()
 
-     def AutomaticExchange(self, collect_):
-          #set up an exchange without user interaction. Used for return to stockpile
-          #first get resource type and list of item to exchange and amount
-          res_type = collect_.target.type_
-          item_exchange_list = []
-          item_exchange_amount = []
-          for item in self.inventory: #resource type and item types should correspond
-               if item.type_ == res_type:
-                    item_exchange_list.append(item)
-                    item_exchange_amount.append(item.amount)
-          exchange_ = Exchange(self, self.stockpile, item_exchange_list, item_exchange_amount) #acter, target, item_list, item_amount_list
-          self.action.insert(0, exchange_) #put exchange_ to beginning of action
-
-     def LeaveBuilding(self):
-          #entities In_Building is reset to false, entity removed from building inventory
-          if isinstance(self, Unit):
-               if self.In_Building == False:
-                    return
-               else:
-                    self.In_Building.unit_inventory.remove(self)
-                    self.In_Building = False
-                    return
-          else:
-               return
-          
 #---------------------------------------------------------------------------------
 
 class Building(Entity_HP):
@@ -110,45 +84,22 @@ class Building(Entity_HP):
 
      """
      def __init__(self, pos = [0,0], building_type = 0, inventory = [], HP = 10, action = [], inventory_capacity = 0, unit_capacity = 0,
-                  attack_speed = 0, attack_damage = 0, dead = False, unit_inventory = []):        
+                  attack_speed = 0, attack_damage = 0, dead = False):        
           self.name = Entity.random_name()
           self.type_ = building_type
           self.unit_capacity = unit_capacity
-          self.unit_inventory = unit_inventory[:]
           super(Building, self).__init__(pos, inventory, HP, action, inventory_capacity, attack_speed, attack_damage, dead)
 
      def set_building_atributes(self, building_type_names):
           #main hut
           if self.type_ == 0:
                self.name = building_type_names[0]
-               self.unit_capacity = Hut_default_unit_cap
+               self.unit_capacity = 10
           #storage pile
           if self.type_ == 1:
                self.name = building_type_names[1]
                self.inventory_capacity = 200
 
-     def GetUnitInventorySize(self):
-          #returns the number of units in the unit_inventory
-          val = len(self.unit_inventory)
-          return val
-     
-     def DisplayGarrison(self):
-          #prints the atributes of the units in the buildings garrison
-          if self.unit_inventory == []:
-               print '{0} {1} has no garrison, it has {2} available space'.format(type(self).__name__, self.name, self.unit_capacity)
-               return
-          print "-----------------------------------------------------------------------------------------------------"
-          print "|  name  |  position  |  Gender  |     "
-          print "-----------------------------------------------------------------------------------------------------"
-          print "-----------------------------------------------------------------------------------------------------"             
-          for unit_ in self.unit_inventory:
-               print "|  {0}  |  [{1:.2f},{2:.2f}]  |    {3}    |                                             ".format(unit_.name,
-                                                                                                                       unit_.pos[0],
-                                                                                                                       unit_.pos[1],
-                                                                                                                       unit_.gender)
-
-          print "-----------------------------------------------------------------------------------------------------"
-          return
                
 #---------------------------------------------------------------------------------
 
@@ -158,9 +109,8 @@ class Unit(Entity_HP):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, stockpile = Building(), In_Building = False, intr_range = 2, inventory = [], HP = 10, action = [],
-                  inventory_capacity = Unit_default_inv_cap, speed = 1.0, collect_speed = 1.0, destination = [], attack_speed = 1.0,
-                  attack_damage = 1.0, dead = False, gender = 'M', hunger = 100):
+     def __init__(self, pos, intr_range = 2, inventory = [], HP = 10, action = [], inventory_capacity = 10, speed = 1.0, collect_speed = 1.0,
+                  destination = [], stockpile = Building(), attack_speed = 1.0, attack_damage = 1.0, dead = False):
           #speed is distance/s, 0.1 s/cycle 
           self.name = Entity.random_name()
           self.intr_range = intr_range 
@@ -168,9 +118,6 @@ class Unit(Entity_HP):
           self.collect_speed = collect_speed
           self.destination = destination[:]
           self.stockpile = stockpile
-          self.In_Building = In_Building
-          self.gender = choice(['M','F'][:])
-          self.hunger = hunger
           super(Unit, self).__init__(pos, inventory, HP, action, inventory_capacity, attack_speed, attack_damage, dead)
           
      def MoveTo(self, dest, prepend_option = False):
@@ -183,24 +130,6 @@ class Unit(Entity_HP):
           else:
                self.action = [move_] #replace move as the only action
 
-     def TestInBuilding(self):
-          #returns False if not in bulding
-          #returns building pointer if in building
-          if self.In_Building == False:
-               return False
-          else:
-               build_ = self.In_Building 
-               return build_
-
-     def TestInBuildingStr(self):
-          #returns 'No' if not in building
-          #returns building.name at building pos if in building
-          build_bool = self.TestInBuilding()
-          if build_bool == False:
-               return 'No'
-          else:
-               build_str = '{0} at [{1:.0f},{2:.0f}]'.format(build_bool.name, build_bool.pos[0], build_bool.pos[1])
-               return build_str
 
 #---------------------------------------------------------------------------------
 
@@ -217,9 +146,6 @@ class Resource(Entity):
           super(Resource, self).__init__(pos, dead)
 
      def set_res_atributes(self, res_type_names):
-     #################################################################################################
-     #   Note that Resource Type MUST match with its corresponding item type. See AutomaticExchange
-     #################################################################################################
           #food
           if self.type_ == 0:
                self.name = res_type_names[0]
@@ -235,27 +161,11 @@ class Resource(Entity):
 # Methods relating to entities
 #---------------------------------------------------------------------------------
 
-#---------------------------------------------------------------------------------
-# Main game loop function
-#---------------------------------------------------------------------------------
-
-def SelectEntity(Entity_list):
-     if len(Entity_list) == 0:
-          print 'There are no entites'
-          return []
-     else:
-          selection = []
-          choice = make_menu_choice('Select an entity', make_name_type_list(Entity_list))
-          if choice == False:
-               print 'Exited'
-               return []#continue with next event if user cancels
-          selection = Entity_list[choice-1]
-          print '{} selected'.format(selection.name)
-          return selection
-
-#---------------------------------------------------------------------------------
-# Displays
-#---------------------------------------------------------------------------------
+def set_entity_type_names(num_types):
+     entity_type_names = []
+     for i in range(0, num_types):
+          entity_type_names.append(Entity.random_name())
+     return entity_type_names
 
 def display_building_atributes(Building_list):
      #table of building atributes
@@ -285,21 +195,16 @@ def display_resource_atributes(Resource_list):
 def display_unit_atributes(Unit_list):
      #table of unit atributes
      print "-----------------------------------------------------------------------------------------------------"
-     print "|  name  |  position  |  destination  |  HP | In Building |  Gender  | Hunger | "
+     print "|  name  |  position  |  destination  |  HP |"
      print "-----------------------------------------------------------------------------------------------------"
      print "-----------------------------------------------------------------------------------------------------"             
      for unit in Unit_list:
-          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   | {4:.2f} |     {5}    |    {6}   |    {7:.2f}    |     ".format(unit.name,
-                                                                                                                          unit.pos[0], unit.pos[1], unit.destination, unit.HP, unit.TestInBuildingStr(), unit.gender, unit.hunger)
-
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   | {4:.2f} |                                             ".format(unit.name,
+                                                                                                                          unit.pos[0],
+                                                                                                                          unit.pos[1],
+                                                                                                                          unit.destination,
+                                                                                                                          unit.HP)
      print "-----------------------------------------------------------------------------------------------"
 
-#---------------------------------------------------------------------------------
-# Others
-#---------------------------------------------------------------------------------
 
-def set_entity_type_names(num_types):
-     entity_type_names = []
-     for i in range(0, num_types):
-          entity_type_names.append(Entity.random_name())
-     return entity_type_names
+          
