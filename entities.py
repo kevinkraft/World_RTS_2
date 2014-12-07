@@ -75,31 +75,6 @@ class Entity_HP(Entity):
                return
           else:
                self.action[0].DisplayAction()
-
-     def AutomaticExchange(self, collect_):
-          #set up an exchange without user interaction. Used for return to stockpile
-          #first get resource type and list of item to exchange and amount
-          res_type = collect_.target.type_
-          item_exchange_list = []
-          item_exchange_amount = []
-          for item in self.inventory: #resource type and item types should correspond
-               if item.type_ == res_type:
-                    item_exchange_list.append(item)
-                    item_exchange_amount.append(item.amount)
-          exchange_ = Exchange(self, self.stockpile, item_exchange_list, item_exchange_amount) #acter, target, item_list, item_amount_list
-          self.action.insert(0, exchange_) #put exchange_ to beginning of action
-
-     def LeaveBuilding(self):
-          #entities In_Building is reset to false, entity removed from building inventory
-          if isinstance(self, Unit):
-               if self.In_Building == False:
-                    return
-               else:
-                    self.In_Building.unit_inventory.remove(self)
-                    self.In_Building = False
-                    return
-          else:
-               return
           
 #---------------------------------------------------------------------------------
 
@@ -173,13 +148,17 @@ class Unit(Entity_HP):
           self.hunger = hunger
           super(Unit, self).__init__(pos, inventory, HP, action, inventory_capacity, attack_speed, attack_damage, dead)
           
-     def MoveTo(self, dest, prepend_option = False):
+     def MoveTo(self, dest, prepend_option = False, append_option = False):
           #move to destination. prepend_option determines wheather the old action_list is replaced
           #or prepended with the new action 
           move_ = Movement(self, dest) #acter, destination
           self.destination = dest
-          if prepend_option == True:
+          if prepend_option == True and append_option == True:
+               print '############SOME FUCTION IS CONFIGURED INCORRECTLY#############'
+          elif prepend_option == True:
                self.action.insert(0, move_) #put move to beginning of action
+          elif append_option == True:
+               self.action.append(move_) #put move to end, see DoEat()
           else:
                self.action = [move_] #replace move as the only action
 
@@ -201,6 +180,29 @@ class Unit(Entity_HP):
           else:
                build_str = '{0} at [{1:.0f},{2:.0f}]'.format(build_bool.name, build_bool.pos[0], build_bool.pos[1])
                return build_str
+
+     def LeaveBuilding(self):
+          #entities In_Building is reset to false, entity removed from building inventory
+          if isinstance(self, Unit):
+               if self.In_Building == False:
+                    return
+               else:
+                    self.In_Building.unit_inventory.remove(self)
+                    self.In_Building = False
+                    return
+          else:
+               return
+
+     def ReturnToBuilding(self):
+          #puts a move and an enter action to the end of unit action do that they will return to
+          #the building they are in NOW after then have completed some other actions. This should
+          #be called before those actions are inserted into the action
+          if self.In_Building == False:
+               print '###########ReturnToBuilding HAS BEEN USED INCORRECTLY##############'
+               return
+          self.MoveTo(self.In_Building.pos, append_option = True) #append as we want it at the end
+          MakeEnterOrder(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
+          return
 
 #---------------------------------------------------------------------------------
 

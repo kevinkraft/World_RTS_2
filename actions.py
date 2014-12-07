@@ -5,6 +5,7 @@ from copy import deepcopy
 from items import *
 from entities import *
 from functions import *
+from config import *
 
 """
 
@@ -33,6 +34,10 @@ class Action(object):
                print '{0} is moving from [{1:.2f},{2:.2f}] to [{3:.2f},{4:.2f}]'.format(self.acter.name, self.acter.pos[0], self.acter.pos[1],
                                                                                         self.destination[0], self.destination[1])
                return
+          elif isinstance(self, Eat):
+               print '{0} {1} is eating at [{2:.2f},{3:.2f}]'.format(type(self.acter).__name__, self.acter.name, self.acter.pos[0],
+                                                                     self.acter.pos[1])
+               return
           else:
                print "That Action hasn't been given a display yet"
                
@@ -51,6 +56,8 @@ class Action(object):
                self.female.action.remove(self)
                del self
           else:
+               print 'self.acter.action in DeleteAction:'
+               print self.acter.action
                self.acter.action.remove(self) #remove self from acter action list
                del self
           return
@@ -59,11 +66,15 @@ class Action(object):
 class Collect(Action):
      """
 
-     The collecting, mining action
+     The collecting, mining action. 
+     
+     Note: return_to_stockpile is option to return after inventory is full.
+     It is needed as it is not always necessary to return. See DoEat()
 
      """
-     def __init__(self, acter, target):        
+     def __init__(self, acter, target, return_to_stockpile = True):        
           self.target = target
+          self.return_to_stockpile = return_to_stockpile
           super(Collect, self).__init__(acter)
 
      def DoCollect(self, res_type_names):
@@ -84,6 +95,21 @@ class Collect(Action):
           self.acter.inventory.append(item)
           return False #return false when done and inventory is not full
 
+     def AutomaticCollectExchange(self):
+          #set up an exchange without user interaction. Used for return to stockpile
+          #first get resource type and list of item to exchange and amount
+          collect_ = self
+          acter = collect_.acter
+          res_type = collect_.target.type_
+          item_exchange_list = []
+          item_exchange_amount = []
+          for item in acter.inventory: #resource type and item types should correspond
+               if item.type_ == res_type:
+                    item_exchange_list.append(item)
+                    item_exchange_amount.append(item.amount)
+          exchange_ = Exchange(acter, acter.stockpile, item_exchange_list, item_exchange_amount) #acter, target, item_list, item_amount_list
+          acter.action.insert(0, exchange_) #put exchange_ to beginning of action
+
 class Enter(Action):
      """
 
@@ -97,6 +123,16 @@ class Enter(Action):
      def DoEnter(self):
           #function to put a unit into a building using an enter order
           #first check that the building has enough space
+          if self.acter in self.target.unit_inventory:
+               print '{0} {1} is already in that building'.format(type(self.acter).__name__, self.acter.name)
+               self.DeleteAction()
+               return
+          if self.acter.In_Building != False:
+               print '{0} {1} is already in building {2}'.format(type(self.acter).__name__, self.acter.name, self.acter.In_Building.name)
+               self.DeleteAction()
+               return
+          print '(self.target.unit_capacity - self.target.GetUnitInventorySize()):'
+          print (self.target.unit_capacity - self.target.GetUnitInventorySize())
           if (self.target.unit_capacity - self.target.GetUnitInventorySize()) < 1:
                print "{0} {1} can't enter {2} {3} as it is full or has no unit capacity".format(type(self.acter).__name__, self.acter.name,
                                                                                                 type(self.target).__name__, self.target.name)
@@ -106,21 +142,23 @@ class Enter(Action):
                self.acter.In_Building = self.target #give it pointer to building
                self.acter.pos = self.target.pos
                self.target.unit_inventory.append(self.acter)
-               print '{0} {1} has entered {2} {3}'.format(type(self.acter).__name__, self.acter.name,
-                                                          type(self.target).__name__, self.target.name)
-               self.DeleteAction()
+               #print '{0} {1} has entered {2} {3}'.format(type(self.acter).__name__, self.acter.name,
+               #                                           type(self.target).__name__, self.target.name)
+               self.DeleteAction() #don't delete it so the unit will go back to building after automatic order. See DoEat().
+               #No it has to be deleted. See ReturnToBuilding()
                return
                
-          
-
-def MakeEnterOrder(acter_entity, target_entity):
+def MakeEnterOrder(acter_entity, target_entity, append = False):
      #set up the enter building order
      enter_ = Enter(acter_entity, target_entity)
-     enter_.acter.action = [enter_] #override action list
+     if append == True:
+          enter_.acter.action.append(enter_)
+     else:
+          enter_.acter.action = [enter_] #override action list
+     print '{0} {1} will enter {2} {3}'.format(type(acter_entity).__name__, acter_entity.name,
+                                               type(target_entity).__name__, target_entity.name)
      return
      
-     
-
 class Exchange(Action):
      """
 
@@ -137,8 +175,12 @@ class Exchange(Action):
 
      def MakeExchange(self):
           #function to make inventory exchanges and test the size of the target inventory
+          print 'self.acter.action in MakeExchange:'
+          print self.acter.action
           target = self.target
           total_size = 0
+          print 'self.item_list:'
+          print self.item_list
           for i in range(0, len(self.item_list)):
                amount = self.item_amount_list[i]
                total_size += self.item_list[i].GetTotalSize(False, amount) 
@@ -165,6 +207,8 @@ class Exchange(Action):
      def MakeOrderExchange(self):
           #function to make an automatic exchange as part of an order. Has extra outputs if something is wrong.
           #If you wan to make the exchange straight away use MakeExchange().
+          print 'self.acter.action in MakeOrderExchange:'
+          print self.acter.action
           if self.MakeExchange() == False:
                #false if something is wrong 
                print 'Something is wrong with the exchange order you gave to {0}'.format(self.acter)
@@ -308,7 +352,9 @@ class Procreate(Action):
           #There is a lot to add here, baby, child, care for baby, baby needs to be brought food, child can move around but do very little
           #pos, home stockpile, in same building, born hungry so you'd better have food
           new_entity = Unit(self.female.pos, self.female.stockpile, self.female.In_Building, hunger = 30)
+          self.female.In_Building.unit_inventory.append(new_entity)
           self.DeleteAction()
+          print '{0} {1} has been born'.format(type(new_entity).__name__, new_entity.name)
           return new_entity
 
 def SetupProcreate(selection, selected_entity):
@@ -323,6 +369,7 @@ def SetupProcreate(selection, selected_entity):
      if selection.In_Building == selected_entity.In_Building:
           if selection.In_Building == False:
                print 'This action can only be done when both units are in the same building'
+               return
           #make the procreate action
           if selection.gender == 'M':
                male = selection
@@ -335,3 +382,104 @@ def SetupProcreate(selection, selected_entity):
           selected_entity.action = [procreate_]
      else:
           print 'This action can only be done when both units are in the same building'
+          return
+
+class Eat(Action):
+     """
+
+     The automatic class that controls eating when hungry 
+
+     """
+     def __init__(self, acter):        
+          super(Eat, self).__init__(acter)
+          
+     def DoEat(self, Resource_list):
+          #do the eat action in each cycle. Send unit to stockpile if has no food. Send unit to get food if
+          #none in stockpile
+          acter = self.acter
+          eat_ = self
+          #Fist eat food in the inventory
+          if acter.inventory != []:
+               food_item = False
+               for item_ in acter.inventory:
+                    if item_.type_ == 0: #0 for food
+                         if item_.amount < eat_speed: #if there isn't enough
+                              continue
+                         else:
+                              food_item = True
+                              item_.amount = item_.amount - eat_speed
+                              food_amount = eat_speed
+               #now eat the food
+               if food_item == True:
+                    if acter.hunger >= 100:
+                         eat_.DeleteAction()
+                         return
+                    acter.hunger = acter.hunger + food_amount*food_hunger_value
+                    return
+          #if no food in inventory go to stockpile
+          #check if there is food in the stockpile
+          stockpile_has_food = False
+          for item_ in acter.stockpile.inventory:
+               if item_.type_ == 0: #0 for food
+                    stockpile_has_food = True
+                    break
+          if stockpile_has_food == True: #if stockpile not empty go there
+               #if unit in building we want them to go back when they have eaten
+               if acter.In_Building != False: #if not false they are in a building
+                    acter.ReturnToBuilding()
+               if acter.pos != acter.stockpile.pos:
+                    acter.MoveTo(acter.stockpile.pos, True)
+                    return
+               else:
+                    if eat_.AutomaticFoodExchange() == True:
+                         return #exchange made, eat_ will be done from inventory in next cycle
+          #if stockpile empty, go collect food
+          if Resource_list == []: #no resources
+               eat_.DeleteAction()
+               return
+          food_res = False
+          for res_ in Resource_list:
+               if res_.type_ == 0: #for food
+                    if acter.In_Building != False: #if not false they are in a building
+                         acter.ReturnToBuilding()
+                    food_res = True
+                    if acter.pos != res_.pos: #not at the resource
+                         acter.MoveTo(res_.pos, True) #prepend option, don't overwrite
+                         return
+                    else:
+                         collect_ = Collect(acter, res_, False)
+                         acter.action.insert(0, collect_)
+                         return
+          if food_res == False: #no food resources
+               eat_.DeleteAction()
+               return
+                    
+     def AutomaticFoodExchange(self):
+          #set up an exchange without user interaction. Used for return to stockpile to get food
+          eat_ = self
+          acter = eat_.acter
+          if acter.stockpile.inventory == []:
+               return False
+          food_item_exists = False
+          for item_ in acter.stockpile.inventory:
+               if item_.type_ == 0: #for food
+                    food_item_exists = True
+                    if item_.amount < food_pickup_amount:
+                         food_amount = item_.amount
+                         food_item = item_
+                         break
+                    else:
+                         food_amount = food_pickup_amount
+                         food_item = item_
+                         break
+          if food_item_exists == False:
+               return False
+          exchange_ = Exchange(acter.stockpile, acter, [food_item], [food_amount]) #acter, target, item_list, item_amount_list
+          acter.action.insert(0, exchange_) #put exchange_ to beginning of action
+          return True
+               
+               
+               
+
+
+

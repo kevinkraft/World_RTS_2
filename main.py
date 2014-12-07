@@ -13,18 +13,10 @@
 #Add:
 #Orders
 #  Section to allow You to give orders
-#Buildings
-# Implement enter building(done)
-#   Unit goes into building inventory(into unit_inventory done)
-#   Count the Unit instances in the inventory to match to Unit capacity(done)
-#     Could I just give the entities more atributes? In_Building = True, or In_Building = <entity.building>, or False if not(done)
-#       In this case I could make an entity.GetPos() func anyway to change pos[0],pos[1] to "In Building.name"    (done)
 #Add build building
 #Procreate
 #  This action creates a baby which must be cared for by someone unless it dies and must also be brought food
 #    Add the above feture
-#Add Hunger
-# Add this next
 #I NEED TO SORT OUT MODULE NAMES FOR ACTIONS, MAKE EVERYTHING EASY TO UNDERSTAND AND HAVE THE SAME NAMES
 #  Need some or all of the following modules for each action:
 #    Setup(user interface setup), action_.Do(do now, basic), action_.MakeOrder(do later, extra options), Automatic(depends on whats needed)   
@@ -112,11 +104,19 @@ def main():
 
     #initial map resources
     res_type_names = set_entity_type_names(3) #set random name for each type
-    for i in range(0, start_map_resources):
+    for j in range(0, start_food_resources):
+        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you + res_dist_factor*j, res_dist_from_you + res_dist_factor*j),
+                             unit_you.pos[1] + randint(-res_dist_from_you  + res_dist_factor*j, res_dist_from_you + res_dist_factor*j)],
+                            0,
+                            1000) #pos, type, amount
+        resource.set_res_atributes(res_type_names)
+        Resource_list.append(resource)
+        Entity_list.append(resource)
+    for i in range(0, start_random_map_resources):
         #randomly placed aroung 'you'
-        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you, res_dist_from_you),
-                             unit_you.pos[1] + randint(-res_dist_from_you, res_dist_from_you)],
-                            randint(0, 2),
+        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you + res_dist_factor*i, res_dist_from_you + res_dist_factor*i),
+                             unit_you.pos[1] + randint(-res_dist_from_you + res_dist_factor*i, res_dist_from_you + res_dist_factor*i)],
+                            randint(1, 2),
                             1000) #pos, type, amount
         resource.set_res_atributes(res_type_names)
         Resource_list.append(resource)
@@ -128,6 +128,7 @@ def main():
     #main game loop
     while 1:
 
+        #control hunger
         #Decrease Hunger, take damage if hunger is zero
         for unit in Unit_list:
             unit.hunger = unit.hunger - hunger_per_cycle
@@ -136,6 +137,14 @@ def main():
                 unit.HP = unit.HP - hunger_per_cycle_damage
                 if int(unit.HP) % 5 == 0: #print when HP on even number
                     print '{0} {1} is starving to death'.format(type(unit).__name__, unit.name)
+            if unit.hunger <= 50:
+                eat_order = False
+                for action_ in unit.action: #if the unit already has an eat order then dont add one
+                    if isinstance(action_, Eat):
+                        eat_order = True
+                if eat_order == False:
+                    eat_ = Eat(unit) #go and eat
+                    unit.action.insert(0, eat_)
             
         #kill dead entities/remove depleted resources. Entities are marked as dead here but
         #not removed till the end of the loop so actions involving them are not interupted
@@ -175,11 +184,14 @@ def main():
                 collect_ = action_
                 collect_result = collect_.DoCollect(res_type_names)
                 if  collect_result == True: #true if inventory full
-                    entity.MoveTo(collect_.target.pos, True) #add return to target to keep collecting
-                    entity.AutomaticExchange(collect_) #add exchange with stockpile
-                    entity.MoveTo(entity.stockpile.pos, True) #add move to stockpile
-                    continue
-                    #go back to stockpile when inventory full
+                    if collect_.return_to_stockpile == True:
+                        #go back to stockpile when inventory full
+                        entity.MoveTo(collect_.target.pos, True) #add return to target to keep collecting
+                        collect_.AutomaticCollectExchange() #add exchange with stockpile
+                        entity.MoveTo(entity.stockpile.pos, True) #add move to stockpile
+                        continue
+                    else: #done return to stockpile for whatever reason
+                        collect_.DeleteAction()
                 elif collect_result == None: #out of range
                     collect_.DeleteAction()
                     continue
@@ -202,6 +214,10 @@ def main():
                 new_entity = procreate_.DoProcreate()
                 Entity_list.append(new_entity)
                 Unit_list.append(new_entity)
+            #Eat
+            elif isinstance(action_, Eat):
+                eat_ = action_
+                eat_.DoEat(Resource_list)
             else:
                 print type(action_)
                 print 'That action isnt implemented yet'
@@ -384,10 +400,8 @@ def main():
                         continue
                     selection.DisplayGarrison()
                 if event.key == pygame.K_l:
-                    #print selections action
-                    #if selection == []:
-                    #    print 'No Entity Selected'
-                    #    continue
+                    print 'Unit_list[0].action:'
+                    print Unit_list[0].action
                     print "--------------------------------------------------------------------"
                     for unit in Unit_list: 
                         unit.DisplayEntityAction()
