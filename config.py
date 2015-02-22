@@ -29,6 +29,9 @@ hunger_per_cycle = 0.01
 hunger_per_cycle_damage = 0.01
 eat_speed = 0.01
 food_pickup_amount = 2 #this can't be bigger than unit_default_inv_cap
+if food_pickup_amount > Unit_default_inv_cap:
+    print "CONFIG: food_pickup_amount can't be bigger than unit_default_inv_cap. Exiting"
+    sys.exit()
 food_hunger_value = 10
 
 #--------------------------------------------------------------
@@ -48,6 +51,13 @@ materials_types = [materials_type0, materials_type1, materials_type2]
 construct_work0 = 400
 construct_work1 = 100
 construct_work2 = 200
+
+#--------------------------------------------------------------
+# Display
+#--------------------------------------------------------------
+
+#options are 'debug', 'normal'
+display = 'debug'
 
 #--------------------------------------------------------------
 # Map

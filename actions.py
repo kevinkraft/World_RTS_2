@@ -84,20 +84,23 @@ class Collect(Action):
                                                                            self.acter.inventory_capacity)
                return True #if inventory full return true
           if get_dist_between(self.target, self.acter) > self.acter.intr_range: #is acter too far away?
-               print "{} has stop collecting {} as they can only reach {}m".format(self.acter.name,
-                                                                                   self.target.name,
-                                                                                   self.acter.intr_range)
-               return None #if acter is too far away return None to end collection
+               Info("{0} can't collect {1} as they can only reach {2}m, {0} will move within range".format(self.acter.name,
+                                                                                                           self.target.name,
+                                                                                                           self.acter.intr_range), 
+                    'normal')
+               self.acter.MoveTo(self.target.pos, prepend_option = True) #if acter is too far away move them into range
+               return False #return false when done and inventory is not full
           collects_per_cycle = self.acter.collect_speed/100.0
           self.target.amount = self.target.amount - collects_per_cycle
           item = Item(self.target.type_, collects_per_cycle) #type, amount, name
           item.set_item_atributes(res_type_names)
           self.acter.inventory.append(item)
-          return False #return false when done and inventory is not full
+          return False 
 
      def AutomaticCollectExchange(self):
           #set up an exchange without user interaction. Used for return to stockpile
           #first get resource type and list of item to exchange and amount
+          #Note: I could use dump inventory here, but for later additions(weapons) its best not to
           collect_ = self
           acter = collect_.acter
           res_type = collect_.target.type_
@@ -192,6 +195,7 @@ class Exchange(Action):
           if available_space <= total_size:
                print '{0} only has {1} available space'.format(target.name, available_space)
                print 'Those items take up {0} space'.format(total_size)
+               
                return False
           else:
                for j in range(0, len(self.item_list)):
@@ -454,7 +458,7 @@ class Eat(Action):
           #none in stockpile
           acter = self.acter
           eat_ = self
-          #Fist eat food in the inventory
+          #First eat food in the inventory
           if acter.inventory != []:
                food_item = False
                for item_ in acter.inventory:
@@ -531,6 +535,13 @@ class Eat(Action):
                          break
           if food_item_exists == False:
                return False
+          #if the units inventory is full they wont be able to eat
+          #if stockpile is full they won't be able to dump their inventory
+          unit_inv_size = acter.GetInventorySize()
+          if acter.stockpile.GetInventorySize() + unit_inv_size >= acter.stockpile.inventory_capacity:
+               acter.DropInventory()
+          elif unit_inv_size + food_amount > acter.inventory_capacity:
+               acter.DumpInventory()
           exchange_ = Exchange(acter, acter.stockpile, [food_item], [food_amount]) #acter, target, item_list, item_amount_list
           acter.action.insert(0, exchange_) #put exchange_ to beginning of action
           return True

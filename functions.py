@@ -2,6 +2,7 @@ import sys
 import pygame
 from pygame.locals import *
 from math import sqrt, pow
+from config import *
 
 """
 
@@ -66,6 +67,34 @@ def XYInput(title):
         break
     return [new_x, new_y]
 
+#-------------------------------------------------------------------
+# Display
+#-------------------------------------------------------------------
+
+def Info(msgs, outputlvl = 'normal'):
+    #used to print to terminal, different number of messages for different output options
+    #display is set in config. Can pass msgs as list or single str
+
+    #use str to give lvl, so its easy to remember, convert to int to compare
+    lvlints = []
+    lvlstrs = [outputlvl, display] 
+    for i in range(0, 2):
+        lvl = lvlstrs[i]
+        if lvl == 'normal':
+            lvlints.append(2)
+        elif lvl == 'debug':
+            lvlints.append(1)
+        else:
+            print 'functions: Info: {0} is not a valid output level'.format(lvl)
+
+    #now compare and do print, can pass list or single element
+    if lvlints[0] >= lvlints[1]:
+        if isinstance(msgs, list):
+            for msg in msgs:
+                print msg
+        else:
+            print msgs
+            
 #-------------------------------------------------------------------
 # Menus
 #-------------------------------------------------------------------

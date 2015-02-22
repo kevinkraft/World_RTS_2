@@ -84,7 +84,14 @@ class Entity_Action(Entity_HP):
                return
           else:
                self.action[0].DisplayAction()
-          
+
+     def DropInventory():
+          #function that makes the entity drop their inventory items onto the map
+          #need to set up item_ positions before I make this function
+
+          print 'ENTITIES: Entity_Action: DropInventory is not yet configured'
+          return
+
 #---------------------------------------------------------------------------------
 
 class Building(Entity_Action):
@@ -255,6 +262,30 @@ class Unit(Entity_Action):
           MakeOrderEnter(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
           return
 
+     def DumpInventory(self):
+          #exchange everything in the inventory with the units stockpile
+          #this will need to be adapted when I introduce things like weapons in the inventories
+
+          stockpile = self.stockpile
+          #save initial position
+          initpos = self.pos
+          #do move back to initial position
+          self.MoveTo(initpos, prepend_option = True)
+          #get the amounts in the item list
+          if self.inventory == []:
+               return
+          item_amount_list = []
+          for item_ in self.inventory:
+               item_amount_list.append(item_.amount)
+          #do the exchange
+          exchange_ = Exchange(self, stockpile, self.inventory, item_amount_list)
+          self.action.insert(0, exchange_)
+          #move unit to stockpile
+          if self.pos != stockpile.pos:
+               self.MoveTo(stockpile.pos, prepend_option = True)
+
+          return
+          
 #---------------------------------------------------------------------------------
 
 class Resource(Entity):

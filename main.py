@@ -6,31 +6,45 @@
 #
 #Add:
 #Action:
-#  Need to select which type of action you want to do before showing list if possible actions as its too big if there are lots of units
+# * Need to select which type of action you want to do before showing list if possible actions as its too big if there are lots of units
 #Orders
-#  Section to allow You to give orders
+# * Section to allow You to give orders
 #Add build building
-#  First make a new simple building, hut (done)
-#  Will need a class for building which is being built (done, called Construction)
-#  Will need an action for building, called Construct, partly done
-#    This action will involve going to stockpile to get resources, and increasing the comppletion of the building
-#    For now the materials have to be collected first, then the constructor starts to increase the completion
-#    Have to take into account that the units can only carry so much at once
-#    Have to make a distinction between a "new construction", "construction" and "construct"
-#      A new constrction will make a Construction and who ever started it will work on it
-#      A constrution is an entity which is a Building which is currently being built, more than one unit can work on it
-#      a construct is an action that a unit has, two units will have different constructs but can be working on the same construction
-#   The Setup command for a Construct and a New Construct will have to be different, but the action_ itself will be the same type of class
+# * First make a new simple building, hut (done)
+# * Will need a class for building which is being built (done, called Construction)
+# * Will need an action for building, called Construct, partly done
+#    * This action will involve going to stockpile to get resources, and increasing the comppletion of the building
+#    * For now the materials have to be collected first, then the constructor starts to increase the completion
+#    * Have to take into account that the units can only carry so much at once
+#    * Have to make a distinction between a "new construction", "construction" and "construct"
+#      * A new constrction will make a Construction and who ever started it will work on it
+#      * A constrution is an entity which is a Building which is currently being built, more than one unit can work on it
+#      * a construct is an action that a unit has, two units will have different constructs but can be working on the same construction
+# * The Setup command for a Construct and a New Construct will have to be different, but the action_ itself will be the same type of class
 #AutomaticExchange
-#  I can probably put AutomaticFood and Automatic Construct exchange together
+# * I can probably put AutomaticFood and Automatic Construct exchange together
 #Procreate
-#  This action creates a baby which must be cared for by someone unless it dies and must also be brought food
+# * This action creates a baby which must be cared for by someone unless it dies and must also be brought food
+#
+#Stockpile
+# * There's nothing to say that the stockpile is full, 
+# * when 2(or whatever) space left and you want to put in 5(or whatever) it gives error and puts in none, fix this.
+#DropInventory:
+# * Give Items a pos atribute so that they can be dropped by entities. 
 #
 #Problem:
-#  I've noticed that units eventually stop collecting if they were ordered to do so, something to do with eating action interrupting them, they stop collecting because they are more than their intr_range away from the resource, maybe theres a MoveTo missing after some automatic action
-#  When the units inventory is full they cant eat, make them get rid of some of their inventory if this is the case
-#  Every second time the unit goes back to get materials when they are constructing they collect 0 resources for some reason  
-
+# * I've noticed that units eventually stop collecting if they were ordered to do so, something to do with eating action interrupting them,
+#   * FIXED
+#   they stop collecting because they are more than their intr_range away from the resource, maybe theres a MoveTo missing after some
+#   automatic action
+#   * Interesting, if you move the unit back to the food resource, they automatically restart collecting. So yes, the action is still at the
+#     head of their queue but they can't do it because they are too far away. If you add a clause to collect to make them move to the
+#     resource if they are too far away it should fix this
+#     * No, this isn't true, may just have been a coincidence that he started collecting again becuse he was hungry.  
+#   * I added a clause that makes the unit return to the resource if they are too far away. This will probably solve the problem
+# * When the units inventory is full they cant eat, make them get rid of some of their inventory if this is the case(fixed)
+# * Every second time the unit goes back to get materials when they are constructing they collect 0 resources for some reason  
+# * There was a bug related to eating and collecting at the same time, but I can't reproduce it. 
 
 import sys
 import pygame
@@ -123,15 +137,16 @@ def main():
                 if  collect_result == True: #true if inventory full
                     if collect_.return_to_stockpile == True:
                         #go back to stockpile when inventory full
+                        #Note: I could use dump inventory here, but for later additions(weapons) its best not to
                         entity.MoveTo(collect_.target.pos, True) #add return to target to keep collecting
                         collect_.AutomaticCollectExchange() #add exchange with stockpile
                         entity.MoveTo(entity.stockpile.pos, True) #add move to stockpile
                         continue
-                    else: #done return to stockpile for whatever reason
+                    else: #dont return to stockpile for whatever reason
                         collect_.DeleteAction()
-                elif collect_result == None: #out of range
-                    collect_.DeleteAction()
-                    continue
+                #elif collect_result == None: #out of range #depricated, delete
+                #    collect_.DeleteAction()
+                #    continue
             #movement
             elif isinstance(action_, Movement): 
                 move_ = action_
@@ -245,8 +260,12 @@ def main():
                     selection.DisplayGarrison()
                 if event.key == pygame.K_l:
                     #display actions
-                    print 'Unit_list[0].action:'
-                    print Unit_list[0].action
+                    if selection == []:
+                        pass
+                    else:
+                        Info(['selection.action:', selection.action], 'debug')
+                        #print 'selection.action:'
+                        #print selection.action
                     print "--------------------------------------------------------------------"
                     for unit in Unit_list: 
                         unit.DisplayEntityAction()
