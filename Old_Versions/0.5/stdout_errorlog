@@ -1,0 +1,384 @@
+Traceback (most recent call last):
+  File "main.py", line 434, in <module>
+    main()
+  File "main.py", line 206, in main
+    exchange_.MakeOrderExchange()
+  File "/home/kevin/Programing/python/World_RTS_2/actions.py", line 224, in MakeOrderExchange
+    self.DeleteAction()
+  File "/home/kevin/Programing/python/World_RTS_2/actions.py", line 59, in DeleteAction
+    self.acter.action.remove(self) #remove self from acter action list
+ValueError: list.remove(x): x not in list
+
+can reproduce error by collecting, the interaction between eating and collecting causes the problem. Something to do with the exchange inserted into the action list by the collect. 
+
+kevin@kevin-VirtualBox ~/Programing/python/World_RTS_2 $ python main.py
+-----------------------------------------
+What would you like to do?
+a) Add Unit
+s) Select Entity
+m) Display Menu
+u) Unselect Entity
+t) Display Time
+v) Move Unit
+d) Display Units
+r) Display Resources
+b) Display Buildings
+c) Do Action
+i) Display Items
+g) Display Garrison
+l) Display Actions
+x) Cancel Actions
+q) Quit
+----------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  name  |  position  |  type  |  amount  |
+-----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  ah  |  [91.00,54.00]  |   0   |  1000.00  |                                      
+|  ah  |  [96.00,51.00]  |   0   |  1000.00  |                                      
+|  ah  |  [91.00,61.00]  |   0   |  1000.00  |                                      
+|  ah  |  [104.00,63.00]  |   0   |  1000.00  |                                      
+|  mar  |  [77.00,41.00]  |   2   |  1000.00  |                                      
+|  mar  |  [94.00,58.00]  |   2   |  1000.00  |                                      
+|  mar  |  [89.00,67.00]  |   2   |  1000.00  |                                      
+-----------------------------------------------------------------------------------------------
+-----------------------------------------
+Select an entity
+1) Unit You
+2) Unit jo
+3) Building hael
+4) Building car
+5) Resource ah
+6) Resource ah
+7) Resource ah
+8) Resource ah
+9) Resource mar
+10) Resource mar
+11) Resource mar
+12) Go Back
+----------------------------------------
+> 2
+jo selected
+type None to go back
+New x-coordinate: 91
+type None to go back
+New y-xcoordinate: 54
+-----------------------------------------
+Select an entity
+1) Unit You
+2) Unit jo
+3) Building hael
+4) Building car
+5) Resource ah
+6) Resource ah
+7) Resource ah
+8) Resource ah
+9) Resource mar
+10) Resource mar
+11) Resource mar
+12) Go Back
+----------------------------------------
+> 1
+You selected
+-----------------------------------------
+Select an Action
+1) Attack Unit jo
+2) Switch inventory with Unit jo
+3) Procreate with F Unit jo
+4) Enter Buidling hael
+5) Attack Building hael
+6) Switch inventory with Building hael
+7) Enter Buidling car
+8) Attack Building car
+9) Switch inventory with Building car
+10) Collect ah
+11) Go Back
+----------------------------------------
+> 11
+Exited
+-----------------------------------------------------------------------------------------------------
+|  name  |  position  |  type  |  amount  |
+-----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  ah  |  [91.00,54.00]  |   0   |  1000.00  |                                      
+|  ah  |  [96.00,51.00]  |   0   |  1000.00  |                                      
+|  ah  |  [91.00,61.00]  |   0   |  1000.00  |                                      
+|  ah  |  [104.00,63.00]  |   0   |  1000.00  |                                      
+|  mar  |  [77.00,41.00]  |   2   |  1000.00  |                                      
+|  mar  |  [94.00,58.00]  |   2   |  1000.00  |                                      
+|  mar  |  [89.00,67.00]  |   2   |  1000.00  |                                      
+-----------------------------------------------------------------------------------------------
+type None to go back
+New x-coordinate: 77
+type None to go back
+New y-xcoordinate: 41
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [81.46,51.00] to [77.00,41.00]
+jo is moving from [91.00,50.73] to [91.00,54.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [80.44,51.00] to [77.00,41.00]
+jo is moving from [91.00,51.75] to [91.00,54.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [79.77,51.00] to [77.00,41.00]
+jo is moving from [91.00,52.42] to [91.00,54.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [79.26,51.00] to [77.00,41.00]
+jo is moving from [91.00,52.93] to [91.00,54.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [78.71,51.00] to [77.00,41.00]
+jo is moving from [91.00,53.48] to [91.00,54.00]
+--------------------------------------------------------------------
+jo moved to [91, 54]
+self.acter.action in DeleteAction:
+[<actions.Movement object at 0xaff658ac>]
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65a4c>]
+--------------------------------------------------------------------
+You is moving from [78.15,51.00] to [77.00,41.00]
+jo is doing nothing at [91, 54]
+--------------------------------------------------------------------
+-----------------------------------------
+Select an entity
+1) Unit You
+2) Unit jo
+3) Building hael
+4) Building car
+5) Resource ah
+6) Resource ah
+7) Resource ah
+8) Resource ah
+9) Resource mar
+10) Resource mar
+11) Resource mar
+12) Go Back
+----------------------------------------
+> 2
+jo selected
+-----------------------------------------
+Select an Action
+1) Collect ah
+2) Go Back
+----------------------------------------
+> 1
+2, Collect ah selected
+-----------------------------------------
+Select an entity
+1) Unit You
+2) Unit jo
+3) Building hael
+4) Building car
+5) Resource ah
+6) Resource ah
+7) Resource ah
+8) Resource ah
+9) Resource mar
+10) Resource mar
+11) Resource mar
+12) Go Back
+----------------------------------------
+> q
+NameError
+invalid Choice
+> 1
+You selected
+-----------------------------------------
+Select an Action
+1) Enter Buidling hael
+2) Attack Building hael
+3) Switch inventory with Building hael
+4) Enter Buidling car
+5) Attack Building car
+6) Switch inventory with Building car
+7) Collect mar
+8) Go Back
+----------------------------------------
+> 7
+2, Collect mar selected
+jo's inventory is at it's maximum size of 5
+Unit_list[0].action:
+[<actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is collecting mar at [77, 41]
+jo is moving from [89.12,54.00] to [85.00,51.00]
+--------------------------------------------------------------------
+You's inventory is at it's maximum size of 5
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [78.68,45.15] to [85.00,51.00]
+jo is moving from [87.12,54.00] to [85.00,51.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [82.44,45.15] to [85.00,51.00]
+jo is moving from [85.00,52.36] to [85.00,51.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [83.05,45.15] to [85.00,51.00]
+jo is moving from [85.00,51.75] to [85.00,51.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [83.43,45.15] to [85.00,51.00]
+jo is moving from [85.00,51.37] to [85.00,51.00]
+--------------------------------------------------------------------
+jo moved to [85, 51]
+self.acter.action in DeleteAction:
+[<actions.Movement object at 0xaff658ec>, <actions.Exchange object at 0xaff659cc>, <actions.Movement object at 0xaff6590c>, <actions.Collect object at 0xaff65a2c>]
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [83.82,45.15] to [85.00,51.00]
+That Action hasn't been given a display yet
+--------------------------------------------------------------------
+self.acter.action in MakeOrderExchange:
+[<actions.Exchange object at 0xaff659cc>, <actions.Movement object at 0xaff6590c>, <actions.Collect object at 0xaff65a2c>]
+self.acter.action in MakeExchange:
+[<actions.Exchange object at 0xaff659cc>, <actions.Movement object at 0xaff6590c>, <actions.Collect object at 0xaff65a2c>]
+self.item_list:
+[<items.Item object at 0xaff65a0c>]
+Finsihed exchange, 5.01 ah has been transferred from jo to car
+self.acter.action in DeleteAction:
+[<actions.Exchange object at 0xaff659cc>, <actions.Movement object at 0xaff6590c>, <actions.Collect object at 0xaff65a2c>]
+Unit_list[0].action:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [84.17,45.15] to [85.00,51.00]
+jo is moving from [85.34,51.00] to [91.00,54.00]
+--------------------------------------------------------------------
+You moved to [85, 51]
+self.acter.action in DeleteAction:
+[<actions.Movement object at 0xaff658cc>, <actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+self.acter.action in MakeOrderExchange:
+[<actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+self.acter.action in MakeExchange:
+[<actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+self.item_list:
+[<items.Item object at 0xaff65acc>]
+Finsihed exchange, 2.51 mar has been transferred from You to car
+self.acter.action in DeleteAction:
+[<actions.Exchange object at 0xaff65a4c>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+Unit_list[0].action:
+[<actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [83.08,51.00] to [77.00,41.00]
+jo is moving from [91.00,53.96] to [91.00,54.00]
+--------------------------------------------------------------------
+jo moved to [91, 54]
+self.acter.action in DeleteAction:
+[<actions.Movement object at 0xaff6590c>, <actions.Collect object at 0xaff65a2c>]
+-----------------------------------------------------------------------------------------------------
+|  name  |  position  |  destination  |  HP | In Building |  Gender  | Hunger | 
+-----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  You  |  [79.94,51.00]  |   [77, 41]   | 10.00 |     No    |    F   |    54.55    |     
+|  jo  |  [91.00,54.00]  |   []   | 10.00 |     No    |    F   |    54.55    |     
+-----------------------------------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [78.58,51.00] to [77.00,41.00]
+jo is collecting ah at [91, 54]
+--------------------------------------------------------------------
+jo's inventory is at it's maximum size of 5
+Unit_list[0].action:
+[<actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [77.00,50.00] to [77.00,41.00]
+jo is moving from [89.00,54.00] to [85.00,51.00]
+--------------------------------------------------------------------
+Unit_list[0].action:
+[<actions.Movement object at 0xaff65b4c>, <actions.Eat object at 0xaff658cc>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+--------------------------------------------------------------------
+You is moving from [78.85,49.40] to [85.00,51.00] #HES GOING BACK TO GET FOOD FROM THE STOCKPILE
+Unit jo is eating at [88.40,54.00] #HES MOVING BACK TO THE STOCKPILE WITH A LOAD OF FOOD AND STOPPED TO EAT THE FOOD IN HIS INVENTORY
+--------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  Name  |  Position  |  Type  |  Unit Capacity  |  Inventory Capacity  |  Inventory Size  |   HP  | 
+-----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+|  hael  |  [82.00,53.00]  |   0   |      3      |       0       |        0        | 10.00 |
+|  car  |  [85.00,51.00]  |   1   |      0      |       200       |        10.03        | 10.00 |
+-----------------------------------------------------------------------------------------------
+You moved to [85, 51] #HE HAS ARRIVEED AT THE STOCKPILE
+self.acter.action in DeleteAction: #THIS IS DELETING THE MOVE ORDER FROM THE FRONT OF THE ACTION QUEUE
+[<actions.Movement object at 0xaff65b4c>, <actions.Eat object at 0xaff658cc>, <actions.Movement object at 0xaff6588c>, <actions.Collect object at 0xaff65aac>]
+#SO THE MOVE AT THE FRONT OF THE ACTION QUEUE IS DELETED AND THE GAME LOOP MOVES ON 
+#GAME LOOP MOVES TO NEXT ITERATION
+#GOES INTO HUNGER LOOP AND WE LOOK AT HUNGER AS ITS BELOW 50
+#UNIT ALREADY HAS AN EAT ORDER SO A NEW ONE ISN'T ADDED AND WE MOVE ON TO THE ACTIONS LOOP
+#LOOP OVER UNIT YOUS ACTIONS FIRST AS HE IS FIRST IN THE ENTITY LIST
+#HIS EAT ACTION IS AT THE FRONT OF THE QUEUE SO WE WILL END UP IN THE EAT SECTION
+#we go into DoEat
+#INVENTORY IS NOT EMPTY BECAUSE UNITPROBABLY HAS SOME MAR RESOURCE, SO WE CHECK FOR FOOD AND FIND NONE
+#SO NO FOOD EATEN AND FOOD ORDER ISNT DELETED
+#STOCKPILE HAS FOOD SO WE GO INTO THAT SECTION
+#SKIP RETURN TO BUILDING PART AS THE UNIT HAS In_Building = False
+#OUR POS IS THE SAME AS THE STOCKPILE SO WE SKIP THE MOVE PART
+#SO WE GO INTO eat.AutomaticFoodExchange()
+#ALL THE THINGS THAT RETURN FALSE WERE ALREADY RULED OUT BEFORE WE ENTERED AutomaticFoodExchange()
+#SO AN EXCHANGE MADE AN IS PUT TO THE FRONT OF THE ACTION QUEUE
+#RETURN TRUE, RETURN NOTHING FROM DoEat BACK TO main.py 
+#WE NOW GO ON TO JO'S ACTIONS. THERE ARE A FEW POSSIBILITIES, 
+#1) STILL EATING INVENTORY(POSSIBLE)
+#2) FINISHED EATING INVENTORY AND IS FULL (NO)
+#   I) FOOD HAS SIZE 1 AND HE HAD A FULL INVENTORY, SO HE HAD 5 FOOD, IS THIS ENOUGH TO FILL JO?
+#   II) (EAT SPEED)*(FOOD HUNGER VALUE) = (0.01)*(10) = 0.1 PER CYCLE, PER 0.01 FOOD 5/0.01 = 500, 500*0.1 = 50, SO IT MAY NOT HAVE FILLED HIM 
+#   III) HIS HUNGER GOT DOWN TO 50, AND WHILE HE WAS IT EATING IT DECREASED FURTHER, SO WHEN HE HAD FINISHED EATING THE FOOD IN HIS INVENTORY HE#        PROBABLY HAD ABOUT 95 HUNGER, SO HE WOULDN'T HAVE STOPPED EATING
+#3) FINISHED EATING INVENTORY AND IS NOT FULL (POSSIBLE)
+#-------------------------------------------------------------
+#1) SEE BELOW, THIS APPEARS TO BE NOTHING TO DO WITH JO, ITS AN EXCHANGE WITH YOU THAT CAUSES THE PROBLEM. SKIP ALL OF JO'S PARTS
+#-------------------------------------------------------------
+#SO YOUS INVENTORY HAS AN EXCHANGE AT THE FRONT, THEN AN EAT, THEN A MOVE BACK TO COLLECT MAR, THEN A COLLECT
+#SO IN THE ACTION LOOP WE GO INTO MAKE ORDER EXCHANGE
+#BELOW OUTPUT IS PRODUCED
+#--------------------------------------------------------------
+self.acter.action in MakeOrderExchange: 
+[]
+#---------------------------------------------------------------
+#WHY IS THIS EMPTY???????
+#SOMEWHERE BETWEEN THE AUTOMATICFOODEXCHANGE COMMAND AND HERE THE ACTION LIST HAS BEEN OVERRIDEN!!!!!
+#THIS DOESNT MAKE SENSE, HOE COULD WE GET INTO THE ACTION LIST EXCHANGE SECTION IF THE ACTION LISR IS EMPTY
+#WE CAN'T!!! SO MAYBE THE EXCHANGE HAS THE WRONG UNIT, A UNIT WITH NO ACTION
+#MAYBE ON L.460           acter = eat_.acter    I'M ACCIDENTLY CREATING A DUPLICATE UNIT? BUT ITS ACTION LIST WOULDN'T BE EMPTY
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#THE DEFINITION OF EXCHANGE HAS THE ACTER AND TARGET THE WRONF WAY AROUND, ITS TREATING THE STOCKPILE WHICH HAS NO ACTIONS AS THE ACTER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#THIS IS ACTUALLY THE WAY IT SHOULD BE, BUT WE NEED TO GIVE THE EXCHANGE TO THE STOCKPILE NOT TO THE UNIT, TO MAKE THIS WORK, OR COULS WE DEFINE THE AMOUNTS AS NEGATIVE? 
+
+
+self.acter.action in MakeExchange:
+[]
+self.item_list:
+[<items.Item object at 0xaff6582c>]
+Finsihed exchange, 2 ah has been transferred from car to You
+self.acter.action in DeleteAction:
+[]
+Traceback (most recent call last):
+  File "main.py", line 434, in <module>
+    main()
+  File "main.py", line 206, in main
+    exchange_.MakeOrderExchange()
+  File "/home/kevin/Programing/python/World_RTS_2/actions.py", line 230, in MakeOrderExchange
+    self.DeleteAction()
+  File "/home/kevin/Programing/python/World_RTS_2/actions.py", line 61, in DeleteAction
+    self.acter.action.remove(self) #remove self from acter action list
+ValueError: list.remove(x): x not in list

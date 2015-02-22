@@ -1,8 +1,8 @@
 #World RTS 2
-#Version: 0.6
+#Version: 0.5
 #
 #Kevin Maguire
-#22/02/15
+#7/12/14
 #
 #Add:
 #Action:
@@ -10,16 +10,48 @@
 #   * Could solve this by only printing the boring stuff related to the unit you have selected, not sure how to implement
 #Orders
 # * Section to allow You to give orders
+#Add build building
+# * First make a new simple building, hut (done)
+# * Will need a class for building which is being built (done, called Construction)
+# * Will need an action for building, called Construct, partly done(done)
+#    * This action will involve going to stockpile to get resources, and increasing the comppletion of the building(done)
+#    * For now the materials have to be collected first, then the constructor starts to increase the completion(done)
+#    * Have to take into account that the units can only carry so much at once (done)
+#    * Have to make a distinction between a "new construction", "construction" and "construct"(done)
+#      * A new constrction will make a Construction and who ever started it will work on it (done)
+#      * A constrution is an entity which is a Building which is currently being built, more than one unit can work on it
+#      * a construct is an action that a unit has, two units will have different constructs but can be working on the same construction
+# * The Setup command for a Construct and a New Construct will have to be different, but the action_ itself will be the same type of class
 #AutomaticExchange
 # * I can probably put AutomaticFood and Automatic Construct exchange together
 #Procreate
 # * This action creates a baby which must be cared for by someone unless it dies and must also be brought food
+#
 #Stockpile
 # * There's nothing to say that the stockpile is full, 
 # * when 2(or whatever) space left and you want to put in 5(or whatever) it gives error and puts in none, fix this.
 #DropInventory:
 # * Give Items a pos atribute so that they can be dropped by entities. 
 #
+#Problem:
+# * I've noticed that units eventually stop collecting if they were ordered to do so, something to do with eating action interrupting them,
+#   * FIXED
+#   they stop collecting because they are more than their intr_range away from the resource, maybe theres a MoveTo missing after some
+#   automatic action
+#   * Interesting, if you move the unit back to the food resource, they automatically restart collecting. So yes, the action is still at the
+#     head of their queue but they can't do it because they are too far away. If you add a clause to collect to make them move to the
+#     resource if they are too far away it should fix this
+#     * No, this isn't true, may just have been a coincidence that he started collecting again becuse he was hungry.  
+#   * I added a clause that makes the unit return to the resource if they are too far away. This will probably solve the problem
+# * When the units inventory is full they cant eat, make them get rid of some of their inventory if this is the case(fixed)
+# * Every second time the unit goes back to get materials when they are constructing they collect 0 resources for some reason  (fixed)
+#   * There are two "move exchange move"s added to the action list for some reason.they should be added one at a time, after the unit
+#     has come back to the construction with the resources and transferred them to the construction
+#     * this is caused by the DumpInventory() command, I will move it, its unrelated to the about bug tho.
+#   * FIXED: A for loop was endind after the unit transferred resources to the construction. It was then going on to give the next
+#     DoConstruct command when it should have been returning. So I added a return statement, so the cycle ends instead of adding in the
+#     next DoConstruct cycle a cycle too soon
+# * There was a bug related to eating and collecting at the same time, but I can't reproduce it. 
 
 import sys
 import pygame
