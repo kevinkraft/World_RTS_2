@@ -9,7 +9,7 @@ from config import *
 
 """
 
-All game entities
+All game actions
 
 """
 
@@ -38,6 +38,8 @@ class Action(object):
                print '{0} {1} is eating at [{2:.2f},{3:.2f}]'.format(type(self.acter).__name__, self.acter.name, self.acter.pos[0],
                                                                      self.acter.pos[1])
                return
+          elif isinstance(self, Construct):
+               print '{} {} is constructing {} at [{2:.2f},{3:.2f}], it is {} completed'
           else:
                print "That Action hasn't been given a display yet"
                
@@ -50,14 +52,12 @@ class Action(object):
                self.acter.destination = []
                self.acter.action.remove(self) #remove self from acter action list
                del self
-          if isinstance(self, Procreate):
+          elif isinstance(self, Procreate):
                #need to delete action_ from both male and female actions
                self.acter.action.remove(self)
                self.female.action.remove(self)
                del self
           else:
-               print 'self.acter.action in DeleteAction:'
-               print self.acter.action
                self.acter.action.remove(self) #remove self from acter action list
                del self
           return
@@ -110,6 +110,12 @@ class Collect(Action):
           exchange_ = Exchange(acter, acter.stockpile, item_exchange_list, item_exchange_amount) #acter, target, item_list, item_amount_list
           acter.action.insert(0, exchange_) #put exchange_ to beginning of action
 
+def SetupCollect(selection, selected_entity):
+     #set up collect action
+     print 'Collect {} selected'.format(selected_entity.name)                    
+     collect_ = Collect(selection, selected_entity) #acter, target
+     selection.action = [collect_]
+
 class Enter(Action):
      """
 
@@ -148,7 +154,7 @@ class Enter(Action):
                #No it has to be deleted. See ReturnToBuilding()
                return
                
-def MakeEnterOrder(acter_entity, target_entity, append = False):
+def SetupEnter(acter_entity, target_entity, append = False):
      #set up the enter building order
      enter_ = Enter(acter_entity, target_entity)
      if append == True:
@@ -173,14 +179,10 @@ class Exchange(Action):
           self.target = target
           super(Exchange, self).__init__(acter)
 
-     def MakeExchange(self):
+     def DoExchange(self):
           #function to make inventory exchanges and test the size of the target inventory
-          print 'self.acter.action in MakeExchange:'
-          print self.acter.action
           target = self.target
           total_size = 0
-          print 'self.item_list:'
-          print self.item_list
           for i in range(0, len(self.item_list)):
                amount = self.item_amount_list[i]
                total_size += self.item_list[i].GetTotalSize(False, amount) 
@@ -205,11 +207,9 @@ class Exchange(Action):
           return True
 
      def MakeOrderExchange(self):
-          #function to make an automatic exchange as part of an order. Has extra outputs if something is wrong.
-          #If you wan to make the exchange straight away use MakeExchange().
-          print 'self.acter.action in MakeOrderExchange:'
-          print self.acter.action
-          if self.MakeExchange() == False:
+          #function to do an automatic exchange as part of an order. Has extra outputs if something is wrong.
+          #If you wan to make the exchange straight away use DoExchange().
+          if self.DoExchange() == False:
                #false if something is wrong 
                print 'Something is wrong with the exchange order you gave to {0}'.format(self.acter)
                if len(self.item_list) != 1: #if all items were chosen need to change what is printed
@@ -232,7 +232,7 @@ class Exchange(Action):
                #del self
           return
 
-def SetUpExchange(selection, selected_entity):
+def SetupExchangeInternal(selection, selected_entity):
      #set up with user interaction menus to make exchange properties
      while True:
           str_item_list = []
@@ -258,11 +258,60 @@ def SetUpExchange(selection, selected_entity):
                     print 'Exited'
                     return False #user goes back
           exchange_ = Exchange(selection, selected_entity, item_choice_list, amount_choice_list)
-          if exchange_.MakeExchange() == False:
+          if exchange_.DoExchange() == False:
                del exchange_ #dont use DeleteAction here as it is never in entity.inventory
                return False #user selects an amount larger then the inventory space of the target, go back
           else:
                return True #ends the inner while
+
+def SetupExchange():
+     #set up the exchange action order
+
+     print '{}, Exchange inventory with {} selected'.format(selected_entity.name)
+     exchange_underway = True
+     while exchange_underway: #while loop so user can cancel and go back a step
+          dir_choice = make_menu_choice('Choose Direction',['{0} to {1}'.format(selection.name, selected_entity.name),
+                                                            '{0} to {1}'.format(selected_entity.name, selection.name)])
+          if dir_choice == False:
+               print 'Exited'
+               break #leave the exchange if user exits
+          while True: #this loop allows the user to go back
+               str_item_list = [] #stores the names of the items
+               if dir_choice == 1:
+                    if SetupExchangeInternal(selection, selected_entity) == True:
+                         exchange_underway = False #finished sucessfully, leave while loops
+                         break
+                    else:
+                         break #go back one step, but not all the way
+               if dir_choice == 2:
+                    if SetupExchangeInternal(selected_entity, selection) == True:
+                         exchange_underway = False #finished sucessfully, leave while loops
+                         break
+                    else:
+                         break #go back one step, but not all the way
+     return
+
+def AutomaticExchange(acter, target, item_type, amount):
+     #function to make an automatic exchange as part of some other action, see DoConstruct
+     if target.inventory == []:
+          return False
+     item_exists = False
+     for item_ in target.inventory:
+          if item_.type_ == item_type: 
+               item_exists = True
+               if item_.amount < amount:
+                    take_amount = - item_.amount #it's minus so the unit can own the action
+                    take_item = item_
+                    break
+               else:
+                    take_amount = - amount #it's minus so the unit can own the action
+                    take_item = item_
+                    break
+     if item_exists == False:
+          return False
+     exchange_ = Exchange(acter, target, [take_item], [take_amount]) #acter, target, item_list, item_amount_list
+     acter.action.insert(0, exchange_) #put exchange_ to beginning of action
+     return True
 
 class Attack(Action):
      """
@@ -296,6 +345,13 @@ class Attack(Action):
                                                                                                    self.acter.name)
                return True
           return 
+
+def SetupAttack(selection, selected_entity):
+     #set up the attack order
+     print '{0} will attack {1} {2}'.format(selection.name, type(selected_entity).__name__, selected_entity.name)
+     attack_ = Attack(selection, selected_entity)
+     selection.action = [attack_]
+
   
 
 class Movement(Action):
@@ -455,6 +511,7 @@ class Eat(Action):
                return
                     
      def AutomaticFoodExchange(self):
+          #WILL CONBINE THIS WITH AutomaticExchange BECUASE THEY ARE THE SAME
           #set up an exchange without user interaction. Used for return to stockpile to get food
           eat_ = self
           acter = eat_.acter
@@ -478,7 +535,148 @@ class Eat(Action):
           acter.action.insert(0, exchange_) #put exchange_ to beginning of action
           return True
                
-               
+class Construct(Action):
+     """
+
+     The clss that controls contruction and building
+
+     """
+     #this doesnt work, every Construct has to be made with a preexisting Construction
+     #def __new__(cls, acter):
+     #     from entities import Construction
+     #     construction = Construction()
+     #     return super(Construct).__init__(cls, acter, construction)
+
+     def __init__(self, acter, construction):
+          self.construction = construction
+          super(Construct, self).__init__(acter)
+
+     def DoConstruct(self):
+          #do one iteration of the construction action
+          materials = self.construction.materials 
+          acter = self.acter
+          #how much free space does unit have in inventory
+          acter_free_space = acter.inventory_capacity - acter.GetInventorySize()
+          #reduce materials needed from items in unit inventory
+          if acter.inventory == []:
+               pass
+          else:
+               for key in materials.keys():
+                    for item_ in acter.inventory:
+                         print 'item_:'
+                         print item_
+                         if item_.type_ == key:
+                              if materials[key] > 0:
+                                   if item_.amount > materials[key]:
+                                        item_.amount = item_.amount - materials[key]
+                                        materials[key] = 0
+                                   else:
+                                        materials[key] = materials[key] - item_.amount
+                                        acter.inventory.remove(item_)
+                                        del item_
+                                        break
+          #go and get resources if needed
+          need_resources = False
+          for key in materials.keys():
+               if materials[key] > 0: #resource needed
+                    need_resources = True
+          if need_resources == True:
+               for key in materials.keys():
+                    if materials[key] > 0: #resource needed
+                         #check if the resource is in the stockpile
+                         in_stockpile = AmountInStockpile(acter.stockpile, key)
+                         if in_stockpile == None: #stockpile,item_type, amount
+                              #we dont have the resources
+                              continue
+                         else:
+                              if in_stockpile < acter_free_space:
+                                   take_amount = in_stockpile
+                              else:
+                                   take_amount = acter_free_space
+                         #go and get item
+                         acter.MoveTo(self.construction.pos, True) #prepend true
+                         AutomaticExchange(acter, acter.stockpile, key, take_amount) #acter, target, item_type, amount
+                         acter.MoveTo(acter.stockpile.pos, True) #prepend true
+                         return
+               print 'Resources Needed'
+          elif need_reources == False:
+               #we have all the materials, start building
+               work_per_cycle = acter.construct_speed/100.0               
+               self.construction.work = self.construction.work - work_per_cycle
+               #delete action if the construct is finished
+               if self.construction.work <= 0:
+                    self.DeleteAction()
+                    return
+               return
+     
+def SetupConstruct(selection, selected_entity):
+     #set up a construct for an existing construction
+     #make the Construct action class and give it to entity
+     construct_ = Construct(selection, selected_entity)     
+     selection.action = [construct_]
+     return
+     
+def SetupNewConstruct(selection, building_type_names, Construction_list):
+     from entities import Construction
+     #set up for construction, where user chooses what to build, where Construction() is made
+
+     #make dict of buildings that can be constructed, type:bool
+     #need to have enough resources in the stockpile(might remove this later)
+     can_build = {}
+     building_types = range(len(building_type_names))
+     for i in building_types:
+          materials_needed = materials_types[i] #this is a global vec containing the necessary materials for each building type
+          enough_in_stockpile = {}
+          for key in materials_needed:
+               item_type = key
+               item_amount = materials_needed[key]
+               #if we don't need any
+               if item_amount == 0.0:
+                    enough_in_stockpile[item_type] = True
+                    continue
+               #if the stockpile is completely empty
+               if selection.stockpile.inventory == []:
+                    enough_in_stockpile[item_type] = False
+                    continue
+               else:
+                    for item in selection.stockpile.inventory:
+                         if (item.type_ == item_type) and (item.amount >= item_amount):
+                              enough_in_stockpile[item_type] = True
+                         else:
+                              enough_in_stockpile[item_type] = False
+          if False in enough_in_stockpile.values():
+               can_build[i] = False
+          else:
+               can_build[i] = True
+     #return if can't build any
+     if True not in can_build.values():
+          print "You don't have enough resources to build anything"
+          return
+     #make a list of names out of the bool dict 
+     name_list = []
+     types_list = []
+     for key in can_build:
+          if can_build[key] == True:
+               name_list.append(building_type_names[key])
+               types_list.append(key)
+     #display ones that can be built in a menu choice
+     choice = make_menu_choice('Which building do you want to construct?', name_list)
+     if choice == False:
+          return
+     construction_choice = types_list[choice - 1]
+     pos = XYInput('Where do you want to build it?')
+     if pos == False: #user cancelled, return
+          return
+     #make the Construction entity class, it will become a Building
+     construction_ = Construction(pos, construction_choice)
+     construction_.set_construction_atributes(building_type_names)
+     Construction_list.append(construction_)
+     #make the Construct action class and give it to entity
+     construct_ = Construct(selection, construction_)     
+     selection.action = [construct_]
+     return
+     
+          
                
 
 

@@ -1,35 +1,40 @@
 #World RTS 2
-#Version: 0.4
+#Version: 0.5
 #
 #Kevin Maguire
-#9/11/14
-#
-#Notes:
-# Interface will be multiple choice in terminal menus for now. Tables in ASCII if there are any.
-# The game will have continuous coordinates and will not be based on a grid
-# Every entity will have a positive grid coordinate(x,y) which increases right for x and down for y, as in pygame.
-# Entities will include everything, units, buildings, resources. Except Terrain, which will be based on ranges. 
+#7/12/14
 #
 #Add:
+#Action:
+#  Need to select which type of action you want to do before showing list if possible actions as its too big if there are lots of units
 #Orders
 #  Section to allow You to give orders
 #Add build building
+#  First make a new simple building, hut (done)
+#  Will need a class for building which is being built (done, called Construction)
+#  Will need an action for building, called Construct, partly done
+#    This action will involve going to stockpile to get resources, and increasing the comppletion of the building
+#    For now the materials have to be collected first, then the constructor starts to increase the completion
+#    Have to take into account that the units can only carry so much at once
+#    Have to make a distinction between a "new construction", "construction" and "construct"
+#      A new constrction will make a Construction and who ever started it will work on it
+#      A constrution is an entity which is a Building which is currently being built, more than one unit can work on it
+#      a construct is an action that a unit has, two units will have different constructs but can be working on the same construction
+#   The Setup command for a Construct and a New Construct will have to be different, but the action_ itself will be the same type of class
+#AutomaticExchange
+#  I can probably put AutomaticFood and Automatic Construct exchange together
 #Procreate
 #  This action creates a baby which must be cared for by someone unless it dies and must also be brought food
-#    Add the above feture
-#I NEED TO SORT OUT MODULE NAMES FOR ACTIONS, MAKE EVERYTHING EASY TO UNDERSTAND AND HAVE THE SAME NAMES
-#  Need some or all of the following modules for each action:
-#    Setup(user interface setup), action_.Do(do now, basic), action_.MakeOrder(do later, extra options), Automatic(depends on whats needed)   
 #
-#Problem: 
-#  There are too many messages being displayed
-#  List index out of range error something to do with MakeOrderExchange an eating(fixed)
-#    The acter target defined in the exchange in AutomaticFoodExchange() were the wrong way around, I swapped them and put a minus in the food amount so that the unit could still own the exchange action and I wouldnt have to make him wait or anything weird like that. The list index out of range was because the eat was trying to loop over the acters(stockpile) action list, but the stockpile(acter) didnt have an exchange action, the unit had it, so its action was empty and couldnt be looped over. 
+#Problem:
+#  I've noticed that units eventually stop collecting if they were ordered to do so, something to do with eating action interrupting them, they stop collecting because they are more than their intr_range away from the resource, maybe theres a MoveTo missing after some automatic action
+#  When the units inventory is full they cant eat, make them get rid of some of their inventory if this is the case
+#  Every second time the unit goes back to get materials when they are constructing they collect 0 resources for some reason  
+
 
 import sys
 import pygame
 from pygame.locals import *
-from random import randint
 from config import *
 from entities import *
 from actions import *
@@ -37,7 +42,8 @@ from terrains import *
 from items import *
 import all_names
 from functions import *
-
+from initialize import * 
+from game_loop import *
 """
 
 Main fuction. Do python main.py to run game
@@ -46,84 +52,10 @@ Main fuction. Do python main.py to run game
 
 def main():
 
-    pygame.init()
-    screen = pygame.display.set_mode((1, 1))
-
-    #Initialise
-    Entity_list = []
-    Unit_list = []
-    selection = []
-    terr_list = []
-    Resource_list = []
-    Building_list = []
-    Entity_HP_list = [] #this is filled in each loop
-
-    #clock
-    clock = pygame.time.Clock()
-    minutes = 0
-    seconds = 0
-    milliseconds = 0
-
-    #initial terrain(not used)
-    for i in range(0, len(current_map)):
-        current_row = current_map[i]
-        for j in range(0, len(current_row)):
-            terr = terrain([i*10, j*10],current_map[i][j], terr_length)
-            terr.set_terr_parameters()
-            terr_list.append(terr)
-
-    #initial units
-    #you
-    unit_you = Unit([0,0], intr_range = 10) #pos, intr_range (default = 2)
-    unit_you.name = 'You'
-    unit_you.pos = [randint(0,100),randint(0,100)]
-    Entity_list.append(unit_you)
-    Unit_list.append(unit_you)
-    #j others
-    for i in range(0, start_units):
-        #randomly placed aroung 'you'
-        unit = Unit([unit_you.pos[0] + randint(-unit_dist_from_you, unit_dist_from_you),
-                     unit_you.pos[1] + randint(-unit_dist_from_you, unit_dist_from_you)])
-        Entity_list.append(unit)
-        Unit_list.append(unit)
-
-    #initial buildings #one hut one storage pile
-    building_type_names = set_entity_type_names(2) #set random name for each type
-    building1 = Building([unit_you.pos[0] + randint(-building_dist_from_you, building_dist_from_you),
-                          unit_you.pos[1] + randint(-building_dist_from_you, building_dist_from_you)], 0) #pos, type
-    building1.set_building_atributes(building_type_names)
-    Entity_list.append(building1)
-    Building_list.append(building1)
-    building2 = Building([unit_you.pos[0] + randint(-building_dist_from_you, building_dist_from_you),
-                          unit_you.pos[1] + randint(-building_dist_from_you, building_dist_from_you)], 1) #pos, type
-    building2.set_building_atributes(building_type_names)
-    Entity_list.append(building2)
-    Building_list.append(building2)
-
-    #set units default stockpile
-    for unit in Unit_list:
-        nearest_stockpile = unit.GetNearestStockpile(Building_list)
-        unit.stockpile = nearest_stockpile
-
-    #initial map resources
-    res_type_names = set_entity_type_names(3) #set random name for each type
-    for j in range(0, start_food_resources):
-        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you + res_dist_factor*j, res_dist_from_you + res_dist_factor*j),
-                             unit_you.pos[1] + randint(-res_dist_from_you  + res_dist_factor*j, res_dist_from_you + res_dist_factor*j)],
-                            0,
-                            1000) #pos, type, amount
-        resource.set_res_atributes(res_type_names)
-        Resource_list.append(resource)
-        Entity_list.append(resource)
-    for i in range(0, start_random_map_resources):
-        #randomly placed aroung 'you'
-        resource = Resource([unit_you.pos[0] + randint(-res_dist_from_you + res_dist_factor*i, res_dist_from_you + res_dist_factor*i),
-                             unit_you.pos[1] + randint(-res_dist_from_you + res_dist_factor*i, res_dist_from_you + res_dist_factor*i)],
-                            randint(1, 2),
-                            1000) #pos, type, amount
-        resource.set_res_atributes(res_type_names)
-        Resource_list.append(resource)
-        Entity_list.append(resource)
+    #Initialize
+    screen, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, building_type_names, res_type_names = Initialize()
+    Construction_list = []
+    clock, minutes, seconds, milliseconds = StartClock()
 
     #main menu
     main_menu()
@@ -165,9 +97,11 @@ def main():
                     entity.dead = True
                     print
                 
-        #do actions
+        #remake container lists
         Entity_HP_list = []
         Entity_HP_list = Unit_list + Building_list
+
+        #do actions
         for entity in Entity_HP_list:
             if entity.action == []:
                 continue
@@ -221,6 +155,10 @@ def main():
             elif isinstance(action_, Eat):
                 eat_ = action_
                 eat_.DoEat(Resource_list)
+            #Construct
+            elif isinstance(action_, Construct):
+                construct_ = action_
+                construct_.DoConstruct()
             else:
                 print type(action_)
                 print 'That action isnt implemented yet'
@@ -259,7 +197,7 @@ def main():
                     print '{} created'.format(unit.name)
                 if event.key == pygame.K_s:
                     #select entity
-                    selection = SelectEntity(Entity_list)
+                    selection = SelectEntity(Entity_HP_list)
                 if event.key == pygame.K_m:
                      #reprint main menu
                     main_menu()
@@ -272,21 +210,7 @@ def main():
                     print '{}:{}'.format(minutes, seconds)
                 if event.key == pygame.K_v:
                     #movement
-                    while 1: #keeps looping till valid choice made
-                        if selection == []:
-                            print 'No Unit Selected'
-                            break
-                        else:
-                            new_x = ReceiveInput('New x-coordinate:', 'Number', True) #string, option, cancel_option
-                            if new_x == None:
-                                print 'Exited'
-                                break #user cancels
-                            new_y = ReceiveInput('New y-xcoordinate:', 'Number', True)
-                            if new_y == None:
-                                print 'Exited'
-                                break #user cancels
-                            selection.MoveTo([new_x, new_y])
-                            break #break while loop
+                    ChooseMovement(selection)
                 if event.key == pygame.K_d:
                     #list unit properties
                     display_unit_atributes(Unit_list)
@@ -298,90 +222,7 @@ def main():
                     display_building_atributes(Building_list)
                 if event.key == pygame.K_c:
                     #possible actions for unit 
-                    entities_in_range = [] 
-                    str_action_list = [] #string of possible actions
-                    type_action_list =[]
-                    if selection == []:
-                        print 'No Unit Selected'
-                        break
-                    if type(selection) is Building or type(selection) is Resource:
-                        print 'Buildings and Resource actions list coming soon'
-                        continue
-                    for entity in Entity_list: #distance between two points
-                        #0 attack
-                        #1 enter
-                        #2 collect
-                        #3 exchange inventory
-                        #4 Procreate
-                        if entity is selection:
-                            continue 
-                        dist_between = get_dist_between(entity, selection)                    
-                        if dist_between < selection.intr_range:
-                            if isinstance(entity, Building):
-                                str_action_list.append('Enter Buidling {}'.format(entity.name))
-                                type_action_list.append(1) #1 for Enter (probably not necceassy as not very complex)
-                                entities_in_range.append(entity)
-                            if isinstance(entity, Resource):
-                                str_action_list.append('Collect {}'.format(entity.name))
-                                type_action_list.append(2) #2 for collection            
-                                entities_in_range.append(entity)
-                            if isinstance(entity, (Unit, Building)):
-                                str_action_list.append('Attack {0} {1}'.format(type(entity).__name__, entity.name))
-                                type_action_list.append(0) #0 for attack
-                                entities_in_range.append(entity)
-                                str_action_list.append('Switch inventory with {} {}'.format(type(entity).__name__, entity.name))
-                                type_action_list.append(3) #3 for exchange inventory                                            
-                                entities_in_range.append(entity)
-                            if isinstance(entity, Unit):
-                                str_action_list.append('Procreate with {0} {1} {2}'.format(entity.gender, type(entity).__name__, entity.name))
-                                type_action_list.append(4) #4 for procreate
-                                entities_in_range.append(entity)
-                    choice = make_menu_choice('Select an Action', str_action_list)
-                    if choice == False:
-                        print 'Exited'
-                        continue #user cancels, continue looping over the next event
-                    selected_entity = entities_in_range[choice - 1]
-                    selected_action = type_action_list[choice - 1]
-                    if selected_action == 0:
-                        #attack
-                        print '{0} will attack {1} {2}'.format(selection.name, type(selected_entity).__name__, selected_entity.name)
-                        attack_ = Attack(selection, selected_entity)
-                        selection.action = [attack_]
-                    if selected_action == 1:
-                        #enter
-                        MakeEnterOrder(selection, selected_entity)
-                    if selected_action == 2:
-                        #unit collects resource
-                        print '{}, Collect {} selected'.format(selected_action, selected_entity.name)                    
-                        collect_ = Collect(selection, selected_entity) #acter, target
-                        selection.action = [collect_]
-                    if selected_action == 3:
-                        #exchange inventory between entities
-                        print '{}, Exchange inventory with {} selected'.format(selected_action, selected_entity.name)
-                        exchange_underway = True
-                        while exchange_underway: #while loop so user can cancel and go back a step
-                            dir_choice = make_menu_choice('Choose Direction',['{0} to {1}'.format(selection.name, selected_entity.name),
-                                                                              '{0} to {1}'.format(selected_entity.name, selection.name)])
-                            if dir_choice == False:
-                                print 'Exited'
-                                break #leave the exchange if user exits
-                            while True: #this loop allow the user to go back
-                                str_item_list = [] #stores the names of the items
-                                if dir_choice == 1:
-                                    if SetUpExchange(selection, selected_entity) == True:
-                                        exchange_underway = False #finished sucessfully, leave while loops
-                                        break
-                                    else:
-                                        break #go back one step, but not all the way
-                                if dir_choice == 2:
-                                    if SetUpExchange(selected_entity, selection) == True:
-                                        exchange_underway = False #finished sucessfully, leave while loops
-                                        break
-                                    else:
-                                        break #go back one step, but not all the way
-                    if selected_action == 4:
-                        #procreate
-                        SetupProcreate(selection, selected_entity)                        
+                    ChooseAction(selection, Entity_list, building_type_names, Construction_list)
                 if event.key == pygame.K_h:     
                     #print unit inventories
                     for i in range(0, len(Unit_list)):
@@ -403,6 +244,7 @@ def main():
                         continue
                     selection.DisplayGarrison()
                 if event.key == pygame.K_l:
+                    #display actions
                     print 'Unit_list[0].action:'
                     print Unit_list[0].action
                     print "--------------------------------------------------------------------"
@@ -418,6 +260,9 @@ def main():
                         action_.DeleteAction()
                     selection.action = []
                     print 'All {0} {1} actions cancelled'.format(type(selection).__name__, selection.name)
+                if event.key == pygame.K_o:
+                    #show construction
+                    display_construction_atributes(Construction_list)
                 if event.key == pygame.K_q:
                     #exit
                     pygame.quit()
@@ -433,6 +278,14 @@ def main():
                     Unit_list.remove(entity)
                 if isinstance(entity, Resource):
                     Resource_list.remove(entity)
+
+        #make buildings for completed constructions
+        for construction_ in Construction_list:
+            if construction_.work <= 0:
+                building_ = Building(construction_.pos, construction_.type_)
+                Building_list.append(building_)
+                Construction_list.remove(construction_)
+                del construction_
 
 main()
 

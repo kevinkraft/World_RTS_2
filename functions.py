@@ -51,6 +51,21 @@ def ReceiveInput(string, option = '', cancel_option = False, min_ = None, max_ =
                     continue
         return val
 
+def XYInput(title):
+    #user chooses an x,y point
+    print title
+    while 1: #keeps looping till valid choice made
+        new_x = ReceiveInput('X-coordinate:', 'Number', True) #string, option, cancel_option
+        if new_x == None:
+            print 'Exited'
+            return False
+        new_y = ReceiveInput('Y-coordinate:', 'Number', True)
+        if new_y == None:
+            print 'Exited'
+            return False
+        break
+    return [new_x, new_y]
+
 #-------------------------------------------------------------------
 # Menus
 #-------------------------------------------------------------------
@@ -78,21 +93,22 @@ def make_menu(*strs):
     print '----------------------------------------'
 
 def main_menu():
-    make_menu('What would you like to do?',['a', 's', 'm', 'u', 't', 'v', 'd','r','b','c','i', 'g', 'l', 'x', 'q'], ['Add Unit',
-                                                                                                                     'Select Entity',
-                                                                                                                     'Display Menu', 
-                                                                                                                     'Unselect Entity',
-                                                                                                                     'Display Time',
-                                                                                                                     'Move Unit',
-                                                                                                                     'Display Units',
-                                                                                                                     'Display Resources',
-                                                                                                                     'Display Buildings',
-                                                                                                                     'Do Action',
-                                                                                                                     'Display Items',
-                                                                                                                     'Display Garrison',
-                                                                                                                     'Display Actions',
-                                                                                                                     'Cancel Actions',
-                                                                                                                     'Quit'])
+    make_menu('What would you like to do?',['a', 's', 'm', 'u', 't', 'v', 'd','r','b','c','i', 'g', 'l', 'x', 'o', 'q'], ['Add Unit',
+                                                                                                                          'Select Entity',
+                                                                                                                          'Display Menu', 
+                                                                                                                          'Unselect Entity',
+                                                                                                                          'Display Time',
+                                                                                                                          'Move Unit',
+                                                                                                                          'Display Units',
+                                                                                                                          'Display Resources',
+                                                                                                                          'Display Buildings',
+                                                                                                                          'Do Action',
+                                                                                                                          'Display Items',
+                                                                                                                          'Display Garrison',
+                                                                                                                          'Display Actions',
+                                                                                                                          'Cancel Actions',
+                                                                                                                          'Show Constructions',
+                                                                                                                          'Quit'])
 #-------------------------------------------------------------------
 # Maths
 #-------------------------------------------------------------------

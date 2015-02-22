@@ -37,24 +37,12 @@ class Entity(object):
 class Entity_HP(Entity):
      """
 
-     All game entities with HP and inventory
+     All game entities with HP
 
      """
-     def __init__(self, pos, inventory = [], HP = 10, action = [], inventory_capacity = 0, attack_speed = 0, attack_damage = 0, dead = False):
+     def __init__(self, pos, HP = 10, dead = False):
           self.HP = 10
-          self.inventory = inventory[:]
-          self.action = action[:]
-          self.inventory_capacity = inventory_capacity
-          self.attack_speed = attack_speed
-          self.attack_damage = attack_damage
           super(Entity_HP, self).__init__(pos, dead)
-          
-     def GetInventorySize(self):
-          #returns the total size of everything currently in the entity inventory
-          total_size = 0
-          for item in self.inventory:
-               total_size = total_size + item.GetTotalSize()
-          return total_size
 
      def GetNearestStockpile(self, Building_list):
           #returns pointer to nearest stockpile
@@ -67,7 +55,28 @@ class Entity_HP(Entity):
                else:
                     continue
           return pointer_list[dist.index(min(dist))] #return pointer with min dist
-          
+
+class Entity_Action(Entity_HP):
+     """
+
+     All game entities where actions and inventory are relevant
+
+     """
+     def __init__(self, pos, inventory = [], HP = 10, action = [], inventory_capacity = 0, attack_speed = 0, attack_damage = 0, dead = False):
+          self.action = action[:]
+          self.attack_speed = attack_speed
+          self.inventory = inventory[:]
+          self.inventory_capacity = inventory_capacity
+          self.attack_damage = attack_damage
+          super(Entity_Action, self).__init__(pos, HP, dead)
+
+     def GetInventorySize(self):
+          #returns the total size of everything currently in the entity inventory
+          total_size = 0
+          for item in self.inventory:
+               total_size = total_size + item.GetTotalSize()
+          return total_size
+
      def DisplayEntityAction(self):
           #prints the relevant details of an Entities action
           if self.action == []:
@@ -78,29 +87,38 @@ class Entity_HP(Entity):
           
 #---------------------------------------------------------------------------------
 
-class Building(Entity_HP):
+class Building(Entity_Action):
      """
 
      All structures
 
      """
      def __init__(self, pos = [0,0], building_type = 0, inventory = [], HP = 10, action = [], inventory_capacity = 0, unit_capacity = 0,
-                  attack_speed = 0, attack_damage = 0, dead = False, unit_inventory = []):        
+                  attack_speed = 0, attack_damage = 0, dead = False, unit_inventory = [], materials = {}):        
           self.name = Entity.random_name()
           self.type_ = building_type
           self.unit_capacity = unit_capacity
           self.unit_inventory = unit_inventory[:]
+          self.materials = materials
           super(Building, self).__init__(pos, inventory, HP, action, inventory_capacity, attack_speed, attack_damage, dead)
 
      def set_building_atributes(self, building_type_names):
-          #main hut
+          #main hut/keep
           if self.type_ == 0:
                self.name = building_type_names[0]
-               self.unit_capacity = Hut_default_unit_cap
-          #storage pile
+               self.unit_capacity = main_hut_default_unit_cap
+               self.materials = materials_type0
+          #storage pile/stockpile
           if self.type_ == 1:
                self.name = building_type_names[1]
                self.inventory_capacity = 200
+               self.materials = materials_type1
+          #hut/house     
+          if self.type_ == 2:
+               self.name = building_type_names[2]
+               self.inventory_capacity = hut_default_inv_cap
+               self.unit_capacity = hut_default_unit_cap
+               self.materials = materials_type2
 
      def GetUnitInventorySize(self):
           #returns the number of units in the unit_inventory
@@ -125,9 +143,41 @@ class Building(Entity_HP):
           print "-----------------------------------------------------------------------------------------------------"
           return
                
+class Construction(Entity_HP):
+     """
+
+     Unfinished buildings. materials is a dictionary of the necessary materials, these numbers are reduced to zero by units
+     giving resources to the Construction.
+
+     """
+     def __init__(self, pos, building_type, materials = {}, name = 'default', work = 0, HP = 10, dead = False):
+          self.name = name
+          self.type_ = building_type
+          self.materials = materials
+          self.work = work
+          super(Construction, self).__init__(pos, HP, dead)
+
+     def set_construction_atributes(self, building_type_names):
+          #main hut/keep
+          if self.type_ == 0:
+               self.name = building_type_names[0]+' construction'
+               self.materials = materials_type0
+               self.work = construct_work0
+          #storage pile/stockpile
+          if self.type_ == 1:
+               self.materials = materials_type1
+               self.name = building_type_names[1]+' construction'
+               self.work = construct_work1
+          #hut/house     
+          if self.type_ == 2:
+               self.materials = materials_type2
+               self.name = building_type_names[2]+' construction'
+               self.work = construct_work2
+
+
 #---------------------------------------------------------------------------------
 
-class Unit(Entity_HP):
+class Unit(Entity_Action):
      """
 
      All movable entities. i.e. people
@@ -135,7 +185,7 @@ class Unit(Entity_HP):
      """
      def __init__(self, pos, stockpile = Building(), In_Building = False, intr_range = 2, inventory = [], HP = 10, action = [],
                   inventory_capacity = Unit_default_inv_cap, speed = 1.0, collect_speed = 1.0, destination = [], attack_speed = 1.0,
-                  attack_damage = 1.0, dead = False, gender = 'M', hunger = 100):
+                  attack_damage = 1.0, dead = False, gender = 'M', hunger = 100, construct_speed = 1.0):
           #speed is distance/s, 0.1 s/cycle 
           self.name = Entity.random_name()
           self.intr_range = intr_range 
@@ -146,6 +196,7 @@ class Unit(Entity_HP):
           self.In_Building = In_Building
           self.gender = choice(['M','F'][:])
           self.hunger = hunger
+          self.construct_speed = construct_speed
           super(Unit, self).__init__(pos, inventory, HP, action, inventory_capacity, attack_speed, attack_damage, dead)
           
      def MoveTo(self, dest, prepend_option = False, append_option = False):
@@ -201,7 +252,7 @@ class Unit(Entity_HP):
                print '###########ReturnToBuilding HAS BEEN USED INCORRECTLY##############'
                return
           self.MoveTo(self.In_Building.pos, append_option = True) #append as we want it at the end
-          MakeEnterOrder(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
+          MakeOrderEnter(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
           return
 
 #---------------------------------------------------------------------------------
@@ -236,24 +287,6 @@ class Resource(Entity):
 #---------------------------------------------------------------------------------
 # Methods relating to entities
 #---------------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------------
-# Main game loop function
-#---------------------------------------------------------------------------------
-
-def SelectEntity(Entity_list):
-     if len(Entity_list) == 0:
-          print 'There are no entites'
-          return []
-     else:
-          selection = []
-          choice = make_menu_choice('Select an entity', make_name_type_list(Entity_list))
-          if choice == False:
-               print 'Exited'
-               return []#continue with next event if user cancels
-          selection = Entity_list[choice-1]
-          print '{} selected'.format(selection.name)
-          return selection
 
 #---------------------------------------------------------------------------------
 # Displays
@@ -293,6 +326,17 @@ def display_unit_atributes(Unit_list):
      for unit in Unit_list:
           print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   | {4:.2f} |     {5}    |    {6}   |    {7:.2f}    |     ".format(unit.name,
                                                                                                                           unit.pos[0], unit.pos[1], unit.destination, unit.HP, unit.TestInBuildingStr(), unit.gender, unit.hunger)
+
+     print "-----------------------------------------------------------------------------------------------"
+
+def display_construction_atributes(Construction_list):
+     #table of construction
+     print "-----------------------------------------------------------------------------------------------------"
+     print "|       name       |  position  |  type  | Required Work | "
+     print "-----------------------------------------------------------------------------------------------------"
+     print "-----------------------------------------------------------------------------------------------------"             
+     for construction_ in Construction_list:
+          print "|  {0}  |  [{1:.2f},{2:.2f}]  |   {3}   | {4} | ".format(construction_.name, construction_.pos[0], construction_.pos[1], construction_.type_, construction_.work)
 
      print "-----------------------------------------------------------------------------------------------"
 

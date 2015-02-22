@@ -45,7 +45,7 @@ class Item(object):
                amount = self.amount
           #returns the total size of that item. Its default to the amount factor being the amount
           #of that item but can be changed if you just want to know the size of a fraction of the
-          #amount. See MakeExchange().
+          #amount. See DoExchange().
           val = (self.size)*(amount)
           return val
           
@@ -90,3 +90,24 @@ def ConsolidateInventories(Entity_HP_list):
                 if Remove_item == True: #this stops iterating over the second item when it has been removed and no longer exists
                     break
     return
+
+def InStockpile(stockpile, item_type, amount):
+     #NOT USED
+
+     #check if an item with the right amount is in the stockpile
+     #if amount is 0 then any amount will do
+     for item_ in stockpile.inventory:
+          if item_.type_ == item_type:
+               if item_.amount >= amount:
+                    return True
+     return False
+     
+     
+def AmountInStockpile(stockpile, item_type):
+     #Returns amount in stockpile or None
+     for item_ in stockpile.inventory:
+          if item_.type_ == item_type:
+                    return item_.amount
+     return None
+
+

@@ -22,12 +22,32 @@ building_dist_from_you = 2
 #--------------------------------------------------------------
 
 Unit_default_inv_cap = 5
-Hut_default_unit_cap = 3
+main_hut_default_unit_cap = 10
+hut_default_inv_cap = 30
+hut_default_unit_cap = 4
 hunger_per_cycle = 0.01
 hunger_per_cycle_damage = 0.01
 eat_speed = 0.01
 food_pickup_amount = 2 #this can't be bigger than unit_default_inv_cap
 food_hunger_value = 10
+
+#--------------------------------------------------------------
+# Building materials needed
+#--------------------------------------------------------------
+
+main_hut_wood = 200
+main_hut_stone = 10
+storage_pile_wood = 50
+storage_pile_stone = 5
+hut_wood = 75
+hut_stone = 0
+materials_type0 = {0:0, 1:main_hut_wood, 2:main_hut_stone} 
+materials_type1 = {0:0, 1:storage_pile_wood, 2:storage_pile_stone} #food,wood,stone, type:amount
+materials_type2 = {0:0, 1:hut_wood, 2:hut_stone} 
+materials_types = [materials_type0, materials_type1, materials_type2]
+construct_work0 = 400
+construct_work1 = 100
+construct_work2 = 200
 
 #--------------------------------------------------------------
 # Map
