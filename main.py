@@ -5,11 +5,19 @@
 #22/02/15
 #
 #Add:
+#Managers:
+# * Need to fully integrate GameManager, at the moment it doesn't really do anything and has to be manually updated
+#   * This manual update might be what I want though.
+#Display:
+# * Add simple display which has an x for unit positions and something for buildings also
+# * Displays the selected entity in a different colour
+# * Add scrolling and zoom (done)
+# * fix scrolling so that it scrolls less when zoomed in far
 #Action:
 # * Need to select which type of action you want to do before showing list if possible actions as its too big if there are lots of units
 #   * Could solve this by only printing the boring stuff related to the unit you have selected, not sure how to implement
 #Orders
-# * Section to allow You to give orders
+# * Section to allow You to give orders and stop you telling individuals what to do
 #AutomaticExchange
 # * I can probably put AutomaticFood and Automatic Construct exchange together
 #Procreate
@@ -20,7 +28,12 @@
 #DropInventory:
 # * Give Items a pos atribute so that they can be dropped by entities. 
 #
-
+#Bugs:
+# * line 193 in DoExchange in actions.py list index out of range when doing an exchange related to construction
+#   * possibly something to do with giving the order while the unit was eating
+# * MakeOrderEnter entities.py 262 is not defined. When procreating in a building, something to do with food
+# * Construct display action needs __name__ or unit
+y
 import sys
 import pygame
 from pygame.locals import *
@@ -33,6 +46,7 @@ import all_names
 from functions import *
 from initialize import * 
 from game_loop import *
+from graphics import *
 """
 
 Main fuction. Do python main.py to run game
@@ -42,8 +56,7 @@ Main fuction. Do python main.py to run game
 def main():
 
     #Initialize
-    screen, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, building_type_names, res_type_names = Initialize()
-    Construction_list = []
+    screenSet, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, Entity_Action_list, Construction_list, building_type_names, res_type_names, GM = Initialize()
     clock, minutes, seconds, milliseconds = StartClock()
 
     #main menu
@@ -86,12 +99,19 @@ def main():
                     entity.dead = True
                     print
                 
-        #remake container lists
+        #remake container lists (this should all be done with GM and there should be no need for this, implement GM properly)
         Entity_HP_list = []
-        Entity_HP_list = Unit_list + Building_list
+        Entity_HP_list = Unit_list + Building_list + Construction_list
+        Entity_Action_list = []
+        Entity_Action_list = Unit_list + Building_list
+        Entity_list = Unit_list + Building_list + Construction_list + Resource_list
+
+        #update GM(get rid of this by implementing GM and GM lists properly)
+        GM.update(screenSet, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, Entity_Action_list,
+                  Construction_list, building_type_names, res_type_names)
 
         #do actions
-        for entity in Entity_HP_list:
+        for entity in Entity_Action_list:
             if entity.action == []:
                 continue
             action_ = entity.action[0] #takes the first action, which is the current order 
@@ -155,7 +175,7 @@ def main():
                 action_.DeleteAction()
 
         #consolidate unit inventories, remove empty items
-        ConsolidateInventories(Entity_HP_list)
+        ConsolidateInventories(Entity_Action_list)
                                         
         #timing
         if milliseconds > 1000:
@@ -213,6 +233,31 @@ def main():
                 if event.key == pygame.K_c:
                     #possible actions for unit 
                     ChooseAction(selection, Entity_list, building_type_names, Construction_list)
+                if event.key == K_UP:
+                    #screen up
+                    screenSet.topleft[1] -= scroll_amount#*(screenSet.ylength/screen_height)
+                if event.key == K_DOWN:
+                    #screen down
+                    screenSet.topleft[1] += scroll_amount#*(screenSet.ylength/screen_height)
+                if event.key == K_LEFT:
+                    #screen left
+                    screenSet.topleft[0] -= scroll_amount#*(screenSet.xlength/screen_width)
+                if event.key == K_RIGHT:
+                    #screen right
+                    screenSet.topleft[0] += scroll_amount#*(screenSet.xlength/screen_width)
+                if event.key == pygame.K_MINUS:
+                    #screen zoom out
+                    Zoom(screenSet, 'out')
+                if event.key == pygame.K_EQUALS:
+                    #screen zoom in
+                    Zoom(screenSet, 'in')
+                if event.key == pygame.K_RSHIFT:
+                    #display screenSet
+                    print 'GM.Resource_list: ', GM.Resource_list
+                    print 'GM.Construction_list: ', GM.Construction_list
+                    print 'topleft: ', screenSet.topleft
+                    print 'xlength: ', screenSet.xlength
+                    print 'ylength: ', screenSet.ylength
                 if event.key == pygame.K_h:     
                     #print unit inventories
                     for i in range(0, len(Unit_list)):
@@ -223,7 +268,10 @@ def main():
                     if selection == []:
                         print 'No Entity Selected'
                         continue
-                    display_inventory_atributes(selection)
+                    if isinstance(selection, Entity_Action):
+                        display_inventory_atributes(selection)
+                    else:
+                        Info("{}'s don't have inventories".format(type(selection).__name__), 'normal')
                 if event.key == pygame.K_g:     
                     #print selected buildings unit inventory
                     if selection == []:
@@ -237,12 +285,10 @@ def main():
                     #display actions
                     if selection == []:
                         pass
-                    else:
+                    elif isinstance(selection, Entity_Action):
                         Info(['selection.action:', selection.action], 'debug')
-                        #print 'selection.action:'
-                        #print selection.action
                     print "--------------------------------------------------------------------"
-                    for unit in Unit_list: 
+                    for unit in Unit_list:
                         unit.DisplayEntityAction()
                     print "--------------------------------------------------------------------"
                 if event.key == pygame.K_x:
@@ -283,6 +329,9 @@ def main():
                 Info('{0} {1} at [{2:.2f}, {3:.2f}] has been completed'.format(type(building_), building_.name, building_.pos[0],
                                                                                building_.pos[1]),'normal')
                 del construction_
+
+        #update screen
+        UpdateScreen(GM)
 
 main()
 

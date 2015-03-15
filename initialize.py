@@ -1,10 +1,12 @@
-import sys
+import sys, os
 import pygame
 from pygame.locals import *
 from config import *
 from entities import *
 from terrains import *
 from random import randint
+from graphics import *
+from managers import *
 
 """
 
@@ -16,7 +18,12 @@ def Initialize():
 
     #initialize pygame
     pygame.init()
-    screen = pygame.display.set_mode((1, 1))
+
+    #set terminal size
+    os.system('resize -s {1} {0}'.format(terminal_width, terminal_height))
+
+    #initialise screen
+    screenSet = MakeScreen()
 
     #Initialise containers
     Entity_list = []
@@ -39,7 +46,9 @@ def Initialize():
     #you
     unit_you = Unit([0,0], intr_range = 10) #pos, intr_range (default = 2)
     unit_you.name = 'You'
-    unit_you.pos = [randint(0,100),randint(0,100)]
+    #unit_you.pos = [randint(0,100),randint(0,100)]
+    #unit_you.pos = [screen_width/2, screen_height/2]
+    unit_you.pos = [0, 0] #game coords
     Entity_list.append(unit_you)
     Unit_list.append(unit_you)
     #j others
@@ -93,7 +102,18 @@ def Initialize():
     initial_wood.set_item_atributes(res_type_names)
     Building_list[1].inventory = [initial_wood]
 
-    return screen, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, building_type_names, res_type_names
+    #construction list is empty at this stage
+    Entity_Action_list = Unit_list + Building_list
+    Construction_list = []
+
+    #make game manager
+    GM = GameManager(screenSet, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list,
+                     Entity_Action_list, Construction_list, building_type_names, res_type_names)
+
+    #update the screen
+    UpdateScreen(GM)
+
+    return screenSet, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, Entity_Action_list, Construction_list, building_type_names, res_type_names, GM
 
 def StartClock():
     #clock

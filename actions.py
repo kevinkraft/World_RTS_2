@@ -42,7 +42,8 @@ class Action(object):
                print '{0} {1} is constructing {2} at [{3:.2f},{4:.2f}]. It needs {5} more work'.format(type(self.acter), self.acter.name,
                                                                                                        self.construction.name,
                                                                                                        self.construction.pos[0],
-                                                                                                       self.construction.pos[1], self.work)
+                                                                                                       self.construction.pos[1],
+                                                                                                       self.construction.work)
           else:
                print "That Action hasn't been given a display yet"
                
