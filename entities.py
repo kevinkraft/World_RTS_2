@@ -79,11 +79,16 @@ class Entity_Action(Entity_HP):
 
      def DisplayEntityAction(self):
           #prints the relevant details of an Entities action
-          if self.action == []:
+          action = self.action
+          if action == []:
                print '{0} is doing nothing at {1}'.format(self.name, self.pos)
                return
           else:
-               self.action[0].DisplayAction()
+               #we don't care if they're moving between actions, go to next if it's a move 
+               action_num = 0
+               if isinstance(action[0], Movement) and len(action) != 1:
+                    action_num += 1
+               action[action_num].DisplayAction()
 
      def DropInventory():
           #function that makes the entity drop their inventory items onto the map
@@ -190,9 +195,9 @@ class Unit(Entity_Action):
      All movable entities. i.e. people
 
      """
-     def __init__(self, pos, stockpile = Building(), In_Building = False, intr_range = 2, inventory = [], HP = 10, action = [],
-                  inventory_capacity = Unit_default_inv_cap, speed = 1.0, collect_speed = 1.0, destination = [], attack_speed = 1.0,
-                  attack_damage = 1.0, dead = False, gender = 'M', hunger = 100, construct_speed = 1.0):
+     def __init__(self, pos, stockpile = Building(), In_Building = False, intr_range = Unit_default_intr_range, inventory = [], HP = 10,
+                  action = [], inventory_capacity = Unit_default_inv_cap, speed = 1.0, collect_speed = 1.0, destination = [],
+                  attack_speed = 1.0, attack_damage = 1.0, dead = False, gender = 'M', hunger = 100, construct_speed = 1.0):
           #speed is distance/s, 0.1 s/cycle 
           self.name = Entity.random_name()
           self.intr_range = intr_range 
@@ -259,7 +264,8 @@ class Unit(Entity_Action):
                print '###########ReturnToBuilding HAS BEEN USED INCORRECTLY##############'
                return
           self.MoveTo(self.In_Building.pos, append_option = True) #append as we want it at the end
-          MakeOrderEnter(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
+          #MakeOrderEnter(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
+          SetupEnter(self, self.In_Building, append = True) #so unit will go back to building then enter when done eating
           return
 
      def DumpInventory(self):

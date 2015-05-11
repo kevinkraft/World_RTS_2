@@ -31,9 +31,18 @@
 #Bugs:
 # * line 193 in DoExchange in actions.py list index out of range when doing an exchange related to construction
 #   * possibly something to do with giving the order while the unit was eating
-# * MakeOrderEnter entities.py 262 is not defined. When procreating in a building, something to do with food
-# * Construct display action needs __name__ or unit
-y
+# * MakeOrderEnter entities.py 262 is not defined. When procreating in a building, something to do with food (fixed)
+#   * fixed, ther function had its name changed to match convention
+# * Construct display action needs __name__ or unit (fixed)
+# * When Unit is in a building and they go to eat, they bring the building with them! (fixed)
+#   * due to unit being given a pointer to the buildings position when unit entered. So when unit moves they share the same pos
+#     * fixed by making sure the pos given to the unit is a copy, not a pointer
+# * When Unit inventory is full and they are collecting food as part of the eat command, it print's inventory full over and over
+# * The stockpile dissapeared? Is it removed from the relevant entity list?
+#    * yeah this is correct, they are going to a map point that looks blank, to deposit their loads
+#    * So its there its just not in the GM.Building_list, this will be fixed by properly implementing GM
+# * Intr range doesn't work with Attack
+
 import sys
 import pygame
 from pygame.locals import *
@@ -47,6 +56,7 @@ from functions import *
 from initialize import * 
 from game_loop import *
 from graphics import *
+from math import pow
 """
 
 Main fuction. Do python main.py to run game
@@ -235,16 +245,16 @@ def main():
                     ChooseAction(selection, Entity_list, building_type_names, Construction_list)
                 if event.key == K_UP:
                     #screen up
-                    screenSet.topleft[1] -= scroll_amount#*(screenSet.ylength/screen_height)
+                    screenSet.topleft[1] -= scroll_amount*(screenSet.ylength/(screen_height + 0.0))
                 if event.key == K_DOWN:
                     #screen down
-                    screenSet.topleft[1] += scroll_amount#*(screenSet.ylength/screen_height)
+                    screenSet.topleft[1] += scroll_amount*(screenSet.ylength/(screen_height + 0.0))
                 if event.key == K_LEFT:
                     #screen left
-                    screenSet.topleft[0] -= scroll_amount#*(screenSet.xlength/screen_width)
+                    screenSet.topleft[0] -= scroll_amount*(screenSet.xlength/(screen_width + 0.0))
                 if event.key == K_RIGHT:
                     #screen right
-                    screenSet.topleft[0] += scroll_amount#*(screenSet.xlength/screen_width)
+                    screenSet.topleft[0] += scroll_amount*(screenSet.xlength/(screen_width + 0.0))
                 if event.key == pygame.K_MINUS:
                     #screen zoom out
                     Zoom(screenSet, 'out')
@@ -331,7 +341,7 @@ def main():
                 del construction_
 
         #update screen
-        UpdateScreen(GM)
+        UpdateScreen(GM, selection)
 
 main()
 

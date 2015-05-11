@@ -111,7 +111,7 @@ def Initialize():
                      Entity_Action_list, Construction_list, building_type_names, res_type_names)
 
     #update the screen
-    UpdateScreen(GM)
+    UpdateScreen(GM, []) #GM, selection
 
     return screenSet, Entity_list, Unit_list, selection, terr_list, Resource_list, Building_list, Entity_HP_list, Entity_Action_list, Construction_list, building_type_names, res_type_names, GM
 

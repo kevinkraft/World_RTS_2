@@ -3,6 +3,7 @@ import pygame
 from pygame.locals import *
 from config import *
 from functions import *
+from entities import *
 #from items import *
 #from actions import *
 
@@ -62,7 +63,7 @@ def PosGametoScreen(gamepos, screenSet):
     return screenpos
     
     
-def UpdateScreen(GM):
+def UpdateScreen(GM, selection):
     #update the game screen for each cycle, GM is GameManager
 
     #check that the GM lists all make sense
@@ -87,6 +88,11 @@ def UpdateScreen(GM):
         pointlist = makeCrossPointlist(PosGametoScreen(unit.pos, GM.screenSet))
         pygame.draw.lines(screen, unit_colour, False, pointlist, cross_line_width) #surface, colour, closed, points, width    
 
+    #highlight selection
+    if selection != []:
+        if isinstance(selection, Unit):
+            pointlist = makeCrossPointlist(PosGametoScreen(selection.pos, GM.screenSet))
+            pygame.draw.lines(screen, HIGHLIGHT_BLUE, False, pointlist, cross_line_width) #surface, colour, closed, points, width    
 
     pygame.display.flip()
     return

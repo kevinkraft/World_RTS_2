@@ -21,12 +21,13 @@ building_dist_from_you = 2
 #--------------------------------------------------------------
 
 Unit_default_inv_cap = 5
+Unit_default_intr_range = 1
 main_hut_default_unit_cap = 10
 hut_default_inv_cap = 30
 hut_default_unit_cap = 4
 #hunger_per_cycle = 0.1
-hunger_per_cycle = 0.001
-#hunger_per_cycle = 0.0
+hunger_per_cycle = 0.006
+#hunger_per_cycle = 0.05
 hunger_per_cycle_damage = 0.01
 eat_speed = 0.01
 food_pickup_amount = 2 #this can't be bigger than unit_default_inv_cap
@@ -43,7 +44,7 @@ screen_width = 480
 screen_height = 480
 terminal_width = 90
 terminal_height = 40
-scroll_amount = 10
+scroll_amount = 100.0
 
 #--------------------------------------------------------------
 # Building materials needed

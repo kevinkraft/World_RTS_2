@@ -39,7 +39,8 @@ class Action(object):
                                                                      self.acter.pos[1])
                return
           elif isinstance(self, Construct):
-               print '{0} {1} is constructing {2} at [{3:.2f},{4:.2f}]. It needs {5} more work'.format(type(self.acter), self.acter.name,
+               print '{0} {1} is constructing {2} at [{3:.2f},{4:.2f}]. It needs {5} more work'.format(type(self.acter).__name__,
+                                                                                                       self.acter.name,
                                                                                                        self.construction.name,
                                                                                                        self.construction.pos[0],
                                                                                                        self.construction.pos[1],
@@ -144,8 +145,8 @@ class Enter(Action):
                print '{0} {1} is already in building {2}'.format(type(self.acter).__name__, self.acter.name, self.acter.In_Building.name)
                self.DeleteAction()
                return
-          print '(self.target.unit_capacity - self.target.GetUnitInventorySize()):'
-          print (self.target.unit_capacity - self.target.GetUnitInventorySize())
+          Info('(self.target.unit_capacity - self.target.GetUnitInventorySize()):', 'debug')
+          Info((self.target.unit_capacity - self.target.GetUnitInventorySize()), 'debug')
           if (self.target.unit_capacity - self.target.GetUnitInventorySize()) < 1:
                print "{0} {1} can't enter {2} {3} as it is full or has no unit capacity".format(type(self.acter).__name__, self.acter.name,
                                                                                                 type(self.target).__name__, self.target.name)
@@ -153,7 +154,7 @@ class Enter(Action):
                return
           else:
                self.acter.In_Building = self.target #give it pointer to building
-               self.acter.pos = self.target.pos
+               self.acter.pos = self.target.pos[:]
                self.target.unit_inventory.append(self.acter)
                #print '{0} {1} has entered {2} {3}'.format(type(self.acter).__name__, self.acter.name,
                #                                           type(self.target).__name__, self.target.name)
@@ -172,6 +173,17 @@ def SetupEnter(acter_entity, target_entity, append = False):
                                                type(target_entity).__name__, target_entity.name)
      return
      
+def MakeEnterOrder(acter_entity, target_entity, append = False):
+     #set up the enter building order
+     enter_ = Enter(acter_entity, target_entity)
+     if append == True:
+          enter_.acter.action.append(enter_)
+     else:
+          enter_.acter.action = [enter_] #override action list
+     print '{0} {1} will enter {2} {3}'.format(type(acter_entity).__name__, acter_entity.name,
+                                               type(target_entity).__name__, target_entity.name)
+     return
+
 class Exchange(Action):
      """
 
